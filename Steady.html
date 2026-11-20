@@ -43,7 +43,7 @@ button{font:inherit;font-weight:800;border:0;border-radius:999px;min-height:54px
 .steps li{position:relative;padding:4px 0 14px 50px;color:var(--soft);counter-increment:s}
 .steps li::before{content:counter(s);position:absolute;left:0;top:2px;width:36px;height:36px;border-radius:50%;background:var(--panel);color:#fff;font-weight:900;display:grid;place-content:center}
 .steps b{color:#fff;font-weight:800}
-.cues{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 4px;margin:4px -4px 8px}
+.cues{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 4px;margin:4px -4px 8px}
 .cue{min-height:0;padding:8px 2px 10px;border-radius:22px;display:grid;justify-items:center;gap:7px;font-size:13px;font-weight:700;line-height:1.2}
 .cue .face{width:56px;height:56px}
 .cue.on{background:var(--panel)}
@@ -187,12 +187,16 @@ button:disabled{opacity:.55;cursor:default}
     <p class="note" id="vibNote" style="margin:0 0 6px" hidden></p>
     <label class="set">Chime on nudges <input type="checkbox" class="sw" id="chime" role="switch" aria-describedby="chimeNote"></label>
     <p class="note" id="chimeNote" style="margin:0 0 6px" hidden></p>
+    <p style="margin:0 0 8px"><button class="link" id="testHome" type="button">Test nudge</button></p>
+    <p class="note" id="testMsg" role="status" aria-live="polite" style="margin:0 0 8px"></p>
+    <label class="set">Listen for sharp words <input type="checkbox" class="sw" id="words" role="switch" checked aria-describedby="wordsNote"></label>
+    <p class="note" id="wordsNote" style="margin:0 0 6px">Catches phrases that can sound hostile, blaming, defensive or dismissive, like "whatever" or "not my fault". Only your own speech is checked, while your mouth is moving. Words are turned into text on this device, checked against a list, and thrown away. Nothing is saved or sent. The first session downloads a 28 MB speech model.</p>
     <label class="set">Remember my normal <input type="checkbox" class="sw" id="rem" role="switch" aria-describedby="remNote"></label>
     <p class="note" id="remNote" style="margin:0 0 6px"></p>
   </div>
 
   <h2>Private by design</h2>
-  <p class="note">Everything is analyzed on this device, in memory. No video or audio is recorded, saved, or uploaded. The mic will hear other people, but voice cues only count while your own mouth is moving, and nothing anyone says is transcribed or kept. Your session scores and settings are saved on this device. If you turn on Remember my normal, a small profile is saved here too: numbers such as your resting brow reading, your usual pitch and pace, and your normal range for each cue. It holds no audio, video or images, it is encrypted with your sign-in, and turning the switch off deletes it. The app's code and models download from public libraries (jsDelivr and Google); they receive an ordinary web request, never your camera or microphone. The page is locked so it cannot connect anywhere else, which also stops the face library's built-in usage reports.</p>
+  <p class="note">Everything is analyzed on this device, in memory. No video or audio is recorded, saved, or uploaded. The mic will hear other people, but voice cues only count while your own mouth is moving. With Listen for sharp words on, your own speech is turned into text on this device, checked against a list of phrases, and thrown away; nothing anyone says is saved or sent. Your session scores and settings are saved on this device. If you turn on Remember my normal, a small profile is saved here too: numbers such as your resting brow reading, your usual pitch and pace, and your normal range for each cue. It holds no audio, video or images, it is encrypted with your sign-in, and turning the switch off deletes it. The app's code and models download from public libraries (jsDelivr and Google); they receive an ordinary web request, never your camera or microphone. The page is locked so it cannot connect anywhere else, which also stops the face library's built-in usage reports.</p>
   <div id="histCard" hidden><h2>Recent sessions</h2><table id="hist"></table>
     <p style="margin:8px 0 0"><button class="link" id="histAll" type="button">Delete all sessions</button> <span class="note" id="histMsg" role="status" aria-live="polite"></span></p></div>
   <p style="margin:18px 0 0"><button class="link" id="out" type="button">Sign out</button></p>
@@ -208,6 +212,7 @@ button:disabled{opacity:.55;cursor:default}
     <p class="read" id="calRead"></p>
     <p class="note" id="calTip" style="margin:0"></p>
   </div>
+  <button class="primary" id="stepGo" type="button" hidden style="margin-bottom:10px">Start this step</button>
   <div class="row"><button class="ghost" id="cskip" hidden>Start anyway</button><button class="ghost" id="cback">Cancel</button></div>
 </section>
 
@@ -235,7 +240,7 @@ button:disabled{opacity:.55;cursor:default}
   <div class="face sumFace" id="sumFace" aria-hidden="true"></div>
   <h1 id="sumTitle">Session done</h1>
   <p class="sub" id="sumLine"></p>
-  <div class="panel"><h2>Nudges</h2><table id="sumTable"></table></div>
+  <div class="panel"><h2>Nudges</h2><table id="sumTable"></table><p class="note" id="sumWords" hidden style="margin:10px 0 0"></p></div>
   <div class="panel" id="remAsk" hidden>
     <h2>Remember your normal?</h2>
     <p class="note">Steady can save a small profile on this device: numbers such as your resting brow reading, your usual pitch and pace, and your normal range for each cue. No audio, video or images. Your baseline then fits you better each time. Turning it off on the start screen deletes it.</p>
@@ -301,7 +306,8 @@ const CUES={
   loud:{w:1,tau:.4,hold:.6,msg:'Voice is rising. Bring it down a notch.',label:'Getting loud',short:'Loud',fill:'#ff9c8a',ex:'Voice raised',rd:'May sound angry'},
   pitch:{w:.7,tau:1,hold:2,msg:'Pitch has stayed high. Breathe out and lower your voice.',label:'Pitch rising',short:'High pitch',fill:'#f8b6c8',ex:'Pitch up',rd:'May sound stressed'},
   fast:{w:.7,tau:1,hold:1.5,msg:'You are speeding up. Slow down and pause.',label:'Talking fast',short:'Rushing',fill:'#b4e4c8',ex:'Rushing',rd:'May sound anxious'},
-  hog:{w:.5,tau:2,hold:0,cool:60,msg:'You have held the floor for a while. Ask a question.',label:'Long stretch of talking',short:'Long turn',fill:'#a9d9f5',ex:'Long turn',rd:'Others may want a say'}
+  hog:{w:.5,tau:2,hold:0,cool:60,msg:'You have held the floor for a while. Ask a question.',label:'Long stretch of talking',short:'Long turn',fill:'#a9d9f5',ex:'Long turn',rd:'Others may want a say'},
+  words:{w:1,tau:.15,hold:0,cool:5,msg:'That may sound confrontational.',label:'Sharp words',short:'Sharp words',fill:'#ffb3a7',ex:'Sharp words',rd:'May sound confrontational'}
 };
 // the resting look of the on-screen face (see faceSVG for what each number draws)
 const CALM={b:0,bo:0,by:0,eo:1,ea:1,lk:0,ld:0,mc:.6,mo:0,mw:1,mz:0,ma:0,bl:.6};
@@ -318,7 +324,7 @@ function resetState(){
     learn:{db:[],pitch:[],ptime:[],alpha:[],secs:0,peaks:0},learnF:{brow:[],frown:[],press:[],sneer:[],asym:[],smile:[],up:[],yaw:[],nod:[]},
     base:null,bad:{},hold:{},cool:{},counts:{},heat:0,score:100,scores:[],lastSample:0,t0:0,alertUntil:0,
     talk:new Float32Array(90),sec:-1,share:0,dL:0,st:0,top:null,topV:0,alignT:0,frameT0:0,calT0:0,hiddenAt:0,themeT:0,
-    fp:{...CALM},ff:[255,217,120],sig:'',T:{},prof:null,mute:0,mins:0,gA:null,gTalk:false,gMouth:{S:[],I:[]},v:null,
+    fp:{...CALM},ff:[255,217,120],sig:'',T:{},prof:null,mute:0,mins:0,gA:null,gTalk:false,gMouth:{S:[],I:[]},v:null,utt:[],uttLast:0,wordUntil:0,wordMsg:'',said:{},away:0,awayV:[],lastAway:0,
     ses:{brow:[],frown:[],press:[],sneer:[],asym:[],smile:[],f0:[],rate:[],x:{}}});
   for(const k in CUES){S.bad[k]=0;S.hold[k]=0;S.cool[k]=0;S.counts[k]=0;S.T[k]=.5;S.ses.x[k]=[]}
 }
@@ -377,6 +383,15 @@ async function onAudio(x){
   while(S.selfT.length&&now-S.selfT[0]>12000)S.selfT.shift();
   while(S.peaks.length&&now-S.peaks[0]>12000)S.peaks.shift();
   const ss=S.selfT.length*.032;S.rate=ss>=4?S.peaks.length/ss:0; // syllables per second of your own speech, over the last 12 s
+  // word listening: gather your own speech into pieces of up to 8 s, ending at a pause
+  if(live&&S.onUtt){
+    if(self){S.utt.push(Float32Array.from(x));S.uttLast=now}
+    const n=S.utt.length;
+    if(n&&((!self&&now-S.uttLast>500)||n>=250)){
+      if(n>=16){const a=new Float32Array(n*512);S.utt.forEach((c,i)=>a.set(c,i*512));S.onUtt(a)}
+      S.utt=[];
+    }
+  }
   if(live){
     const sec=Math.floor((now-S.t0)/1000);if(sec!==S.sec){S.sec=sec;S.talk[sec%90]=0}
     if(self)S.talk[sec%90]+=.032;
@@ -404,6 +419,7 @@ function voiceDrive(t,x){
   const el=(t-S.t0)/1000;let tk=0;for(let i=0;i<90;i++)tk+=S.talk[i];
   S.share=el>5?clamp(tk/Math.min(90,el)):0; // share of the last 90 seconds you spent talking
   if(el>45)x.hog=(S.share-.55)/.3;
+  if(t<S.wordUntil)x.words=1;
 }
 // median pitch in semitones above your normal, ignoring octave slips of the pitch tracker
 function pitchSt(f,base){
@@ -463,14 +479,62 @@ function learn(P,mins){
   if(got){P.n++;P.t=Date.now()}
   return P;
 }
+// ---- sharp words: phrases that often land as hostile, blaming, defensive or dismissive in a meeting ----
+// Speech is turned into text on this device only while your own mouth is moving; the text is checked here and thrown away.
+const SHARP={
+  hostile:{say:'hostile',tip:'Describe the problem instead.',p:['stupid','idiot','idiotic','dumb','ridiculous','absurd','pathetic','useless','incompetent','nonsense','garbage','rubbish','crap','bullshit','damn it','dammit','what the hell','shit','fuck','fucking','shut up','i hate','this is a joke']},
+  blaming:{say:'blaming',tip:'Try an I statement, like "I see it differently."',p:['you always','you never','your fault','you people','how many times','i already told you','i told you','like i said','as i said','are you kidding','are you serious','you don\'t get it','you don\'t understand','you\'re wrong','that\'s wrong','that\'s not true','calm down','listen to me','let me finish','you need to']},
+  defensive:{say:'defensive',tip:'Try "Let\'s figure out what happened."',p:['not my fault','not my problem','not my job','not on me','i did my part','don\'t blame me','why are you blaming','i\'m not the one','that\'s not my','i was told to','nobody told me']},
+  dismissive:{say:'dismissive',tip:'Try "Help me understand."',p:['whatever','obviously','who cares','doesn\'t matter','if you say so','your problem','deal with it','get over it','no offense','with all due respect','that\'s not how it works','we tried that']}
+};
+function sharpWords(text){
+  const t=' '+String(text).toLowerCase().replace(/[\u2018\u2019`]/g,"'").replace(/[^a-z' ]+/g,' ').replace(/\s+/g,' ').trim()+' ',hits=[];
+  for(const cat in SHARP)for(const ph of SHARP[cat].p){let i=t.indexOf(' '+ph+' ');while(i>=0){hits.push({w:ph,cat});i=t.indexOf(' '+ph+' ',i+ph.length+1)}}
+  return hits;
+}
+function wordHeard(text,t){
+  const h=sharpWords(text);if(!h.length)return null;
+  for(const x of h)S.said[x.w]=(S.said[x.w]||0)+1;
+  const q=h[0],c=SHARP[q.cat];
+  S.wordMsg=`"${q.w[0].toUpperCase()+q.w.slice(1)}" may sound ${c.say}. ${c.tip}`;S.wordUntil=t+2500;
+  return q;
+}
+
+// ---- head angle: how your resting face reads at each angle in personal setup ----
+const FACE7=['brow','frown','press','sneer','asym','smile','up'];
+function poseShift(poses,yaw,nod){
+  if(!poses||poses.length<2)return null;
+  let ws=0;const d={};for(const k of FACE7)d[k]=0;
+  for(const p of poses){const r=Math.hypot(yaw-p.yaw,(nod-p.nod)*1.2)+3,w=1/(r*r);ws+=w;for(const k of FACE7)d[k]+=w*(p.F[k]||0)}
+  for(const k of FACE7)d[k]/=ws;return d;
+}
+// the resting face to compare against at this head angle: today's resting face, shifted by the change setup measured between the two angles
+function baseAt(F,poses,yaw,nod){
+  const a=poseShift(poses,yaw,nod);if(!a)return F;
+  const b=poseShift(poses,F.yaw,F.nod),o={...F};
+  for(const k of FACE7)o[k]=(F[k]||0)+a[k]-b[k];
+  return o;
+}
+// how far the head may turn from today's resting angle before face cues pause: wider when setup covered more angles
+function turnLimit(poses){
+  if(!poses||poses.length<2)return {yaw:32,nod:28};
+  const y=poses.map(p=>p.yaw),n=poses.map(p=>p.nod);
+  return {yaw:clamp(Math.max(...y)-Math.min(...y)+15,32,55),nod:clamp(Math.max(...n)-Math.min(...n)+15,28,45)};
+}
+
 // ---- one-time personal setup: turn the guided steps into a profile ----
 // G[step] = {face:[readings], a:{db,pitch,ptime,alpha,secs,peaks}}, M = mouth movement while talking (S) and silent (I)
 function buildSetup(G,M,P){
   const face=st=>(G[st]&&G[st].face)||[],calm=[...face('rest'),...face('listen')];
   if(calm.length<20)return null;
-  const F={};for(const k of [...FACE5,'up'])F[k]=med(calm.map(v=>v[k]));
-  const drives=list=>list.map(v=>{const x={};faceDrive(v,F,x);return x});
-  const natural=drives([...calm,...face('read'),...face('story')]),T={},posedAt={};
+  const F={};for(const k of FACE7)F[k]=med(calm.map(v=>v[k]));
+  F.yaw=med(face('rest').map(v=>v.yaw||0));F.nod=med(face('rest').map(v=>v.nod||0));
+  // one resting face per angle (straight, left, right, down)
+  const poses=[];
+  for(const st of ['rest','left','right','down']){const f=face(st);if(f.length>=10){const q={};for(const k of FACE7)q[k]=med(f.map(v=>v[k]));poses.push({k:st,yaw:med(f.map(v=>v.yaw||0)),nod:med(f.map(v=>v.nod||0)),F:q})}}
+  const usePoses=poses.length>=2?poses:null;
+  const drives=list=>list.map(v=>{const x={};faceDrive(v,baseAt(F,usePoses,v.yaw||0,v.nod||0),x);return x});
+  const natural=drives([...calm,...face('left'),...face('right'),...face('down'),...face('read'),...face('story')]),T={},posedAt={};
   const nat=c=>pct(natural.map(x=>x[c]),.95);
   const posed=(st,c)=>face(st).length>=8?pct(drives(face(st)).map(x=>x[c]),.75):0;
   for(const [c,st] of [['scowl','frown'],['tense','press'],['sneer',null],['roll',null]]){
@@ -507,7 +571,7 @@ function buildSetup(G,M,P){
   P.face={};for(const k of FACE5)P.face[k]=F[k];
   P.voice={...P.voice,...voice};P.range={};
   if(M.S.length>=20&&mS>Math.max(.15,2*mI))P.mthr=clamp(.4*mS,Math.max(.1,1.5*mI),.7);
-  P.setup={t:Date.now(),T,posed:posedAt,smile:F.smile,smileHi:Math.max(sm,F.smile+.2)};
+  P.setup={t:Date.now(),T,posed:posedAt,smile:F.smile,smileHi:Math.max(sm,F.smile+.2),poses:usePoses};
   return P;
 }
 // Advance every cue by one frame. Returns the cues that have just earned a nudge.
@@ -537,6 +601,9 @@ const MP='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3';
 const FACE_MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 const ORT='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/';
 const VAD_MODEL='https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/silero_vad_v6.onnx';
+// speech-to-text for sharp words: Moonshine tiny (MIT), run on this device in a background worker
+const ASR_MODEL='https://cdn.jsdelivr.net/npm/@usefulsensors/moonshine-js@0.1.21/dist/model/tiny/quantized/';
+const TOK='https://cdn.jsdelivr.net/npm/llama-tokenizer-js@1.2.2/llama-tokenizer.js';
 const video=$('vid'),ZOOM=1.3,ARC=351.9;
 let stream=null,ctx=null,tap=null,wake=null,running=false,busy=false,frame=0,lastT=0,lastVT=-1,lastDet=0,detErr=0,mkFace=null,demoT=0,bgNow='';
 
@@ -546,7 +613,7 @@ const X=o=>({...CALM,bl:0,...o});
 const EXPR={calm:CALM,happy:X({eo:0,mc:.95,bl:.9}),meh:X({mc:.05,mw:.8}),away:X({eo:0,ea:-1,mc:0,mw:.6}),
   scowl:X({b:-1,bo:1,mc:-.8}),tense:X({b:-.35,bo:.9,mc:0,mz:1,mw:.9}),sneer:X({b:-.6,bo:1,ld:.5,mc:-.2,ma:.9}),
   roll:X({lk:1,b:.25,bo:.8,by:.7,mc:-.3,mw:.7}),loud:X({b:-.8,bo:1,mo:1,mc:-.1,mw:1.05}),
-  pitch:X({b:.9,bo:1,by:.6,mo:.55,mw:.5}),fast:X({b:.5,bo:.8,mo:.3,mz:.7,mw:1.1}),hog:X({mo:.75,mc:.4,mw:1.15})};
+  pitch:X({b:.9,bo:1,by:.6,mo:.55,mw:.5}),fast:X({b:.5,bo:.8,mo:.3,mz:.7,mw:1.1}),hog:X({mo:.75,mc:.4,mw:1.15}),words:X({b:-.7,bo:1,mo:.45,mc:-.5,mw:.85,mz:.4})};
 const hexRGB=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
 const rgbStr=c=>'rgb('+c.map(v=>Math.round(v)).join(',')+')';
 // b brow angle (-1 lowered, +1 raised inner ends), bo brow visibility, by brow lift, eo eye openness, ea closed-eye curve,
@@ -593,6 +660,50 @@ async function loadFace(){
     try{face=await mkFace('GPU')}catch(e){face=await mkFace('CPU')}
     return true;
   }catch(e){console.warn(e);face=null;return false}
+}
+const asrSrc=()=>`import * as ort from '${ORT}ort.wasm.bundle.min.mjs';
+import tok from '${TOK}';
+ort.env.wasm.wasmPaths='${ORT}';ort.env.wasm.numThreads=1;
+let enc,dec;const L=6,H=8,D=36;
+async function gen(audio){
+  const eo=await enc.run({input_values:new ort.Tensor('float32',audio,[1,audio.length])}),past={},out=[];
+  for(let i=0;i<L;i++)for(const a of ['decoder','encoder'])for(const b of ['key','value'])past['past_key_values.'+i+'.'+a+'.'+b]=new ort.Tensor('float32',new Float32Array(0),[0,H,1,D]);
+  let id=1;const max=Math.trunc(audio.length/16000*6);
+  for(let i=0;i<max;i++){
+    const o=await dec.run({input_ids:new ort.Tensor('int64',BigInt64Array.from([BigInt(id)]),[1,1]),encoder_hidden_states:eo.last_hidden_state,use_cache_branch:new ort.Tensor('bool',[i>0],[1]),...past});
+    const lg=o.logits.data,V=o.logits.dims[2],off=lg.length-V;let bi=0;for(let k=1;k<V;k++)if(lg[off+k]>lg[off+bi])bi=k;
+    if(bi===2)break;out.push(bi);id=bi;
+    const pres=Object.keys(o).filter(k=>k.includes('present'));
+    Object.keys(past).forEach((k,j)=>{if(i===0||k.includes('decoder'))past[k]=o[pres[j]]});
+  }
+  return tok.decode([1,...out]);
+}
+onmessage=async e=>{
+  const m=e.data;
+  if(m.load){try{const o={executionProviders:['wasm']};enc=await ort.InferenceSession.create('${ASR_MODEL}encoder_model.onnx',o);dec=await ort.InferenceSession.create('${ASR_MODEL}decoder_model_merged.onnx',o);postMessage({ready:1})}catch(err){postMessage({fail:String(err&&err.message||err)})}return}
+  try{postMessage({id:m.id,text:await gen(m.audio)})}catch(err){postMessage({id:m.id,text:''})}
+};`;
+let asr=null,asrReady=false,asrBusy=0,asrId=0;
+// start word listening for this session (needs the camera, so only your own speech is checked)
+function startWords(){
+  S.onUtt=null;
+  if(!$('words').checked||!hasAudio||!(face&&hasVideo))return;
+  if(!asr){
+    try{
+      const u=URL.createObjectURL(new Blob([asrSrc()],{type:'text/javascript'}));
+      asr=new Worker(u,{type:'module'});asrReady=false;asrBusy=0;
+      asr.onmessage=e=>{
+        const m=e.data;URL.revokeObjectURL(u);
+        if(m.ready){asrReady=true;return}
+        if(m.fail){console.warn('Speech model unavailable, so sharp words are off.',m.fail);asr.terminate();asr=null;return}
+        asrBusy=Math.max(0,asrBusy-1);
+        if(m.text&&running&&S.mode==='live')wordHeard(m.text,performance.now());
+      };
+      asr.onerror=e=>{console.warn(e);asr=null};
+      asr.postMessage({load:1});
+    }catch(e){console.warn(e);asr=null;return}
+  }
+  S.onUtt=a=>{if(asr&&asrReady&&asrBusy<2){asrBusy++;asr.postMessage({id:++asrId,audio:a},[a.buffer])}};
 }
 async function loadVAD(){
   if(vad)return;
@@ -676,7 +787,7 @@ function onFace(r,t){
   return true;
 }
 // Is the face well placed inside the head outline? Sizes are shares of the camera frame.
-function guide(faceOk){
+function guide(faceOk,turn){
   let hint='No face found yet. Face the camera with light on your face.',ok=false;
   const L=S.lm,vw=video.videoWidth,vh=video.videoHeight;
   if(faceOk&&L&&vw){
@@ -687,7 +798,7 @@ function guide(faceOk){
     if(size<.16)hint='Move closer.';
     else if(size>.5||Math.min(a.y,1-b.y,c.x,d.x,1-c.x,1-d.x)<.01)hint='Move back a little.';
     else if(Math.abs(cx-.5)>.17||Math.abs(cy-.465)>.15)hint='Center your face in the outline.';
-    else if(S.pose&&(Math.abs(S.yaw)>24||Math.abs(S.nod)>32))hint='Face the camera straight on.';
+    else if(!turn&&S.pose&&(Math.abs(S.yaw)>24||Math.abs(S.nod)>32))hint='Face the camera straight on.';
     else{ok=true;hint='Looks good. Hold still.'}
   }
   $('guide').classList.toggle('ok',ok);
@@ -699,14 +810,17 @@ const status=s=>{const e=$('cstat');if(e.textContent!==s)e.textContent=s};
 const PASSAGE='"Yesterday I walked to the corner store, picked up a few things for dinner, and chatted with a neighbor about the weather and our plans for the weekend."';
 // the one-time personal setup. Each step records for its length (s), skipping the first moment while you change what you are doing.
 const STEPS=[
-  {k:'rest',s:8,say:'Relax your face and stay quiet.',note:'Look at the screen the way you do when you are just listening in a meeting.'},
-  {k:'listen',s:8,say:'Now listen as if a colleague is talking.',note:'React the way you naturally would: nod, think, glance at your notes. Stay quiet.'},
-  {k:'read',s:14,talk:1,say:'Read this out loud at your normal pace.',read:PASSAGE},
-  {k:'story',s:14,talk:1,say:'Tell a short story in your normal, lively voice.',note:'For example, describe a recent weekend or a meal you enjoyed, the way you would to a friendly coworker.'},
-  {k:'fast',s:10,talk:1,say:'Read it again, rushing as if you are out of time.',read:PASSAGE},
-  {k:'smile',s:5,say:'Give a natural smile.'},
-  {k:'frown',s:5,say:'Now frown, as if you are annoyed.',note:'This shows Steady what your frown looks like, so it can catch a smaller one.'},
-  {k:'press',s:5,say:'Press your lips together tightly.'}
+  {k:'rest',min:3,say:'Look straight at the camera with a relaxed face.',note:'Stay quiet, the way you look when you are just listening in a meeting.'},
+  {k:'left',min:3,turn:1,say:'Turn your head a little to your left, and relax.',note:'Keep your face inside the outline. This shows Steady how you look from another angle.'},
+  {k:'right',min:3,turn:1,say:'Now turn a little to your right, and relax.'},
+  {k:'down',min:3,turn:1,say:'Tip your head down a little, as if reading notes.'},
+  {k:'listen',min:5,say:'Listen as if a colleague is talking.',note:'React the way you naturally would: nod, think, glance at your notes. Stay quiet.'},
+  {k:'read',min:6,talk:1,say:'Read this out loud at your normal pace.',read:PASSAGE},
+  {k:'story',min:8,talk:1,say:'Tell a short story in your normal, lively voice.',note:'For example, describe a recent weekend or a meal you enjoyed, the way you would to a friendly coworker.'},
+  {k:'fast',min:5,talk:1,say:'Read it again, rushing as if you are out of time.',read:PASSAGE},
+  {k:'smile',min:2,say:'Give a natural smile.'},
+  {k:'frown',min:2,say:'Now frown, as if you are annoyed.',note:'This shows Steady what your frown looks like, so it can catch a smaller one.'},
+  {k:'press',min:2,say:'Press your lips together tightly.'}
 ];
 function calText(step,note,read,tip){
   $('calStep').hidden=!step;$('calStep').textContent=step||'';
@@ -733,6 +847,7 @@ async function start(mode){
   if(hasAudio){try{await startAudio();loadVAD()}catch(e){console.warn(e);hasAudio=false}}
   const ok=hasVideo?await loadFace():false;
   if(stream!==mine)return; // cancelled while loading
+  if(S.after!=='guided')startWords();
   if(S.after==='guided'&&!(ok&&hasAudio)){end();show('calib');status('Personal setup needs both the camera and the microphone. Allow both, then try again.');return}
   try{wake=await navigator.wakeLock?.request('screen')}catch(e){wake=null}
   S.note=!hasVideo?'No camera this session, so Steady is listening only. Wear headphones so it hears just you.'
@@ -752,12 +867,20 @@ function beginCal(t){
 }
 function beginGuided(t){S.mode='guided';S.gi=-1;S.G={};$('cskip').hidden=true;nextStep(t)}
 function nextStep(t){
-  S.gi++;S.gA=null;
-  if(S.gi>=STEPS.length)return finishGuided();
-  const st=STEPS[S.gi];S.gT0=t;S.gTalk=!!st.talk;
+  S.gi++;S.gA=null;S.gRec=false;
+  if(S.gi>=STEPS.length){$('stepGo').hidden=true;return finishGuided()}
+  const st=STEPS[S.gi];S.gTalk=!!st.talk;
   S.G[st.k]={face:[],a:{db:[],pitch:[],ptime:[],alpha:[],secs:0,peaks:0}};
-  $('ccount').className='count on';$('ccount').textContent=st.s;
-  status(st.say);calText(`Step ${S.gi+1} of ${STEPS.length}`,st.note,st.read,'');
+  $('ccount').className='count';
+  status(st.say);calText(`Step ${S.gi+1} of ${STEPS.length}`,st.note,st.read,'Get ready, then tap Start this step. Tap Done when you have finished.');
+  const b=$('stepGo');b.hidden=false;b.disabled=false;b.textContent='Start this step';b.focus();
+}
+// Start records the step; Done (available after the step's minimum time) moves on
+function stepButton(){
+  const t=performance.now();
+  if(S.mode!=='guided')return;
+  if(!S.gRec){S.gRec=true;S.gT0=t;S.gA=S.G[STEPS[S.gi].k].a;$('ccount').className='count on';$('ccount').textContent='0';$('stepGo').textContent='Done';$('stepGo').disabled=true}
+  else nextStep(t);
 }
 function finishGuided(){
   const P=buildSetup(S.G,S.gMouth,profile);
@@ -810,12 +933,15 @@ function tick(t){
     const left=S.calLen-(t-S.calT0)/1000;$('ccount').textContent=Math.max(1,Math.ceil(left));
     if(left<=0)finishCal(t);
   }else if(S.mode==='guided'){
-    const st=STEPS[S.gi],el=(t-S.gT0)/1000,q=guide(faceOk);
-    if(el>1.2&&!S.gA)S.gA=S.G[st.k].a;
-    status(st.say);const tip=q.ok?'':'Keep your face inside the outline.';if($('calTip').textContent!==tip)$('calTip').textContent=tip;
-    if(fresh&&faceOk&&el>1.2)S.G[st.k].face.push(faceVals());
-    $('ccount').textContent=Math.max(1,Math.ceil(st.s-el));
-    if(el>=st.s)nextStep(t);
+    const st=STEPS[S.gi],q=guide(faceOk,st.turn);
+    if(S.gRec){
+      const el=(t-S.gT0)/1000;
+      if(fresh&&faceOk)S.G[st.k].face.push({...faceVals(),yaw:S.yaw,nod:S.nod});
+      $('ccount').textContent=Math.floor(el);
+      const ready=el>=st.min;if($('stepGo').disabled===ready)$('stepGo').disabled=!ready;
+      const tip=!q.ok?'Keep your face inside the outline.':ready?'Tap Done when you have finished.':'Recording...';
+      if($('calTip').textContent!==tip)$('calTip').textContent=tip;
+    }
   }else if(S.mode==='live')evaluate(dt,t,faceOk);
   requestAnimationFrame(tick);
 }
@@ -823,9 +949,22 @@ function tick(t){
 function evaluate(dt,t,faceOk){
   const B=S.base,x={scowl:0,tense:0,sneer:0,roll:0,loud:0,pitch:0,fast:0,hog:0};
   if(!B.fb&&faceOk){collectFace(S.learnF);if(S.learnF.brow.length>=90)B.fb=faceWith(faceBase(S.learnF),S.prof)}
-  const F=B.fb,turned=!!F&&S.pose&&(Math.abs(S.yaw-F.yaw)>32||Math.abs(S.nod-F.nod)>28),seeing=faceOk&&!!F&&!turned;
+  const poses=S.prof&&S.prof.setup&&S.prof.setup.poses,lim=turnLimit(poses);
+  let F=B.fb,turned=!!F&&S.pose&&(Math.abs(S.yaw-F.yaw)>lim.yaw||Math.abs(S.nod-F.nod)>lim.nod);
+  // the camera moved to a new angle and stayed there: re-learn the resting face at that angle instead of going quiet
+  if(turned&&faceOk){
+    if(!S.away)S.away=t;
+    if(t-S.lastAway>45){S.lastAway=t;S.awayV.push({...faceVals(),yaw:S.yaw,nod:S.nod});if(S.awayV.length>80)S.awayV.shift()}
+    if(t-S.away>4000&&S.awayV.length>=40){
+      const r=S.awayV.slice(-60),o={yaw:med(r.map(q=>q.yaw)),nod:med(r.map(q=>q.nod))};
+      for(const k of FACE7)o[k]=med(r.map(q=>q[k]));
+      B.fb=F=o;turned=false;S.away=0;S.awayV=[];
+      $('liveNote').textContent='Your camera angle changed, so Steady re-learned your resting face for this angle.';
+    }
+  }else{S.away=0;S.awayV.length=0}
+  const seeing=faceOk&&!!F&&!turned;
   const v=S.v=seeing?faceVals():null;
-  if(v)faceDrive(v,F,x); // face cues are paused while your head is turned away
+  if(v)faceDrive(v,baseAt(F,poses,S.yaw,S.nod),x); // compared with your resting face at this head angle
   voiceDrive(t,x);
   if(t-S.lastSample>500)sampleSession(v,x,t-S.selfSeen<1500);
   for(const c of stepCues(dt,t,rawFrom(x,sens())))fire(c,t);
@@ -836,7 +975,7 @@ function evaluate(dt,t,faceOk){
 
 function fire(c,t){
   S.alertUntil=t+4000;
-  const a=$('alert');a.textContent=CUES[c].msg;a.classList.add('hot');
+  const a=$('alert');a.textContent=c==='words'&&S.wordMsg?S.wordMsg:CUES[c].msg;a.classList.add('hot');
   buzz();
   if($('chime').checked)chime();
   const d=$('dot');d.style.transform='scale(1.6)';setTimeout(()=>d.style.transform='',300);
@@ -885,6 +1024,7 @@ function stopMedia(){
   try{wake?.release()}catch(e){}wake=null;
   if(vad){vad.state=new vad.T('float32',new Float32Array(256),[2,1,128]);vad.inp.fill(0)}
   camMode('off');$('discreet').classList.remove('on');setBg(0);theme();
+  $('stepGo').hidden=true;S.onUtt=null;
 }
 function end(){
   const was=S.mode;
@@ -896,6 +1036,8 @@ function end(){
   $('sumLine').textContent=`Average score ${avg} over ${mins<1?Math.max(1,Math.round(mins*60))+' seconds':mins.toFixed(1)+' minutes'}, with ${total} nudge${total===1?'':'s'}.`;
   const rows=Object.keys(CUES).filter(c=>S.counts[c]).sort((a,b)=>S.counts[b]-S.counts[a]),top=rows[0];
   $('sumTable').innerHTML=rows.length?rows.map(c=>`<tr><td>${CUES[c].label}</td><td>${S.counts[c]}</td></tr>`).join(''):'<tr><td>None. Nicely done.</td><td></td></tr>';
+  const said=Object.entries(S.said).sort((a,b)=>b[1]-a[1]);
+  $('sumWords').hidden=!said.length;$('sumWords').textContent=said.length?'Phrases that came up: '+said.map(([w,n])=>`"${w}"${n>1?' ('+n+')':''}`).join(', ')+'. They are not saved.':'';
   $('sumFace').innerHTML=avg>=85?faceSVG(EXPR.happy,MOONS):avg>=70||!top?faceSVG(CALM,MOONS):avg>=50?faceSVG(EXPR.meh,'#cfd6f6'):faceSVG(EXPR[top],CUES[top].fill);
   try{
     const h=JSON.parse(localStorage.getItem('steady.history')||'[]');
@@ -913,11 +1055,21 @@ function end(){
 const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const CAN_VIBRATE=typeof navigator.vibrate==='function',ANDROID=/Android/i.test(navigator.userAgent);
 function buzz(){
-  if(!$('vib').checked)return;
+  if(!$('vib').checked)return 'off';
   try{
-    if(CAN_VIBRATE){navigator.vibrate([200,100,200]);return}
-    if(IOS){const l=document.createElement('label'),i=document.createElement('input');i.type='checkbox';i.setAttribute('switch','');l.setAttribute('aria-hidden','true');l.style.cssText='position:fixed;opacity:0;pointer-events:none;width:1px;height:1px';l.append(i);document.body.append(l);l.click();setTimeout(()=>l.click(),180);setTimeout(()=>l.remove(),400)}
-  }catch(e){}
+    if(CAN_VIBRATE)return navigator.vibrate([200,100,200])?'sent':'blocked';
+    if(IOS){const l=document.createElement('label'),i=document.createElement('input');i.type='checkbox';i.setAttribute('switch','');l.setAttribute('aria-hidden','true');l.style.cssText='position:fixed;opacity:0;pointer-events:none;width:1px;height:1px';l.append(i);document.body.append(l);l.click();setTimeout(()=>l.click(),180);setTimeout(()=>l.remove(),400);return 'tap'}
+  }catch(e){return 'blocked'}
+  return 'none';
+}
+// what Test nudge did, in plain words, so a problem can be traced
+function testReport(){
+  const b=buzz(),c=$('chime').checked;
+  let a='off';if(c){chime();const ac=ctx&&ctx.state==='running'?ctx:actx;a=ac&&ac.state==='running'?'played':'blocked'}
+  const vib={off:'Vibration is off.',sent:'Vibration sent to the phone. If you felt nothing, check that the phone is not on silent or Do Not Disturb, and that vibration is turned on in Settings, Sound and vibration.',
+    blocked:'The browser blocked the vibration. Tap the screen once and try again.',tap:'iPhone tap tried.',none:'This browser cannot vibrate.'}[b];
+  const snd={off:'Chime is off.',played:'Chime played at media volume.',blocked:'The browser blocked the sound. Tap the screen once and try again.'}[a];
+  return vib+' '+snd;
 }
 function alertNotes(){
   const v=$('vibNote'),c=$('chimeNote');
@@ -990,12 +1142,12 @@ resetState();
 // ---- small things kept in this browser: settings, sign-in, saved profile ----
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 let pkey=null,profile=null,asked=false,booted=false,lockT=0,mem={n:0,until:0};
-function saveSet(){store.set('steady.settings',{sens:document.querySelector('input[name=sens]:checked')?.value||'med',vib:$('vib').checked,chime:$('chime').checked,rem:$('rem').checked,asked})}
+function saveSet(){store.set('steady.settings',{sens:document.querySelector('input[name=sens]:checked')?.value||'med',vib:$('vib').checked,chime:$('chime').checked,words:$('words').checked,rem:$('rem').checked,asked})}
 function loadSet(){
   const q=store.get('steady.settings',{})||{};
   if(SENS[q.sens])document.querySelector(`input[name=sens][value=${q.sens}]`).checked=true;
   if('vib' in q)$('vib').checked=!!q.vib;
-  $('chime').checked=!!q.chime;$('rem').checked=!!q.rem;asked=!!q.asked;
+  $('chime').checked=!!q.chime;$('rem').checked=!!q.rem;asked=!!q.asked;if('words' in q)$('words').checked=!!q.words;
 }
 function setupCard(){
   const d=$('rem').checked&&profile&&profile.setup;
@@ -1079,6 +1231,7 @@ function signOut(){
   if(running||busy)end();
   try{sessionStorage.removeItem('steady.auth')}catch(e){}
   store.del('steady.auth');pkey=null;profile=null;
+  if(asr){asr.terminate();asr=null;asrReady=false}
   show('gate');gateTick();$('uEmail').focus();
 }
 function enter(){boot();loadSet();remNote();renderHist();show('intro')}
@@ -1111,11 +1264,10 @@ function boot(){
   });
   $('out').onclick=signOut;
   $('histAll').onclick=delAll;
-  $('testNudge').onclick=()=>{
-    const v=$('vib').checked,c=$('chime').checked;buzz();if(c)chime();
-    $('alert').textContent=`Test nudge. Vibration ${v?(CAN_VIBRATE||IOS?'on':'not supported here'):'off'}, chime ${c?'on':'off'}. Change these on the start screen.`;
-    $('alert').classList.add('hot');S.alertUntil=performance.now()+3500;
-  };
+  $('testNudge').onclick=()=>{$('alert').textContent='Test nudge. '+testReport();$('alert').classList.add('hot');S.alertUntil=performance.now()+6000};
+  $('testHome').onclick=()=>{$('testMsg').textContent=testReport()};
+  $('words').onchange=saveSet;
+  $('stepGo').onclick=stepButton;
   alertNotes();
   document.querySelectorAll('input[name=sens]').forEach(r=>{r.onchange=saveSet});
   $('vib').onchange=saveSet;
