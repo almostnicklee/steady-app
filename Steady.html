@@ -115,8 +115,7 @@ tr:last-child td{border-bottom:0}
 #summary{text-align:center}
 #summary .panel{text-align:left}
 .sumFace{width:146px;height:146px;margin:14px auto 20px}
-/* the session donut: share of the meeting spent good, warning and nudged, around the face of the session */
-:root{--good:#2a9cc8;--warn:#c4860f;--nudge:#c4343f}
+/* the session donut: how long each expression or signal was showing, around the face of the session */
 .donut{position:relative;width:min(78vw,280px);aspect-ratio:1;margin:4px auto 6px}
 .donut svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .donut .sumFace{position:absolute;inset:24%;width:auto;height:auto;margin:0;pointer-events:none} /* taps pass through to the ring */
@@ -126,10 +125,11 @@ tr:last-child td{border-bottom:0}
 .seg text{opacity:0;transition:opacity .25s;fill:#fff;font:900 17px Nunito,system-ui,sans-serif;paint-order:stroke;stroke:#152465;stroke-width:5px;stroke-linejoin:round;pointer-events:none}
 .seg.pop text{opacity:1}
 .seg:focus-visible .arc{stroke:#fff}
-.legend{list-style:none;display:flex;justify-content:center;flex-wrap:wrap;gap:4px 8px;padding:0;margin:4px 0 6px}
-.legend button{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px;font-size:15px;font-weight:800;border-radius:999px}
+.legend{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 8px;padding:0;margin:8px 0 6px}
+.legend button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:4px 10px;font-size:15px;line-height:1.25;font-weight:800;text-align:left;border-radius:22px}
 .legend button[aria-pressed=true]{background:var(--panel)}
-.legend .swatch{width:14px;height:14px;border-radius:4px;flex:none}
+.legend .swatch{width:26px;height:26px;flex:none;border-radius:50%;box-shadow:0 0 0 3px var(--c)}
+.legend .swatch svg{display:block;width:100%;height:100%}
 .expr{text-align:center;margin:-6px 0 16px}
 body.private .stage{display:none}
 body.private .expr{margin:8px 0 14px}
@@ -428,7 +428,7 @@ function resetState(){
     learn:{db:[],pitch:[],ptime:[],alpha:[],secs:0,peaks:0},learnF:{brow:[],frown:[],press:[],sneer:[],asym:[],smile:[],up:[],yaw:[],nod:[]},
     base:null,bad:{},hold:{},cool:{},counts:{},heat:0,score:100,scores:[],lastSample:0,t0:0,alertUntil:0,
     talk:new Float32Array(90),sec:-1,share:0,dL:0,st:0,top:null,topV:0,alignT:0,frameT0:0,calT0:0,hiddenAt:0,themeT:0,
-    fp:{...CALM},ff:[255,217,120],sig:'',T:{},prof:null,mute:0,mins:0,gA:null,gTalk:false,gMouth:{S:[],I:[]},v:null,bk:{good:0,warn:0,nudge:0},topTime:{},nudgeUntil:0,utt:[],uttLast:0,wordUntil:0,wordMsg:'',said:{},away:0,awayV:[],lastAway:0,repairs:0,selfMsg:'',selfAt:0,ignore:new Set(),lastWord:'',hitAt:{},chanAt:{},sinceP:0,sg:{on:false},sighAt:-1e9,sighStrong:false,yawH:[],shakeAt:-1e9,handKind:'',handT:0,handSince:0,eyesT:0,comboUntil:0,combo:'',
+    fp:{...CALM},ff:[255,217,120],sig:'',T:{},prof:null,mute:0,mins:0,gA:null,gTalk:false,gMouth:{S:[],I:[]},v:null,exT:{},donutFace:'',utt:[],uttLast:0,wordUntil:0,wordMsg:'',said:{},away:0,awayV:[],lastAway:0,repairs:0,selfMsg:'',selfAt:0,ignore:new Set(),lastWord:'',hitAt:{},chanAt:{},sinceP:0,sg:{on:false},sighAt:-1e9,sighStrong:false,yawH:[],shakeAt:-1e9,handKind:'',handT:0,handSince:0,eyesT:0,comboUntil:0,combo:'',
     moments:[],shown:0,lastNudge:-1e9,miss:{},vari:0,rollT:0,rollPk:0,rollUntil:0,rollV:0,level:'all',
     ses:{brow:[],frown:[],press:[],sneer:[],asym:[],smile:[],f0:[],rate:[],x:{}}});
   for(const k in CUES){S.bad[k]=0;S.hold[k]=0;S.cool[k]=0;S.counts[k]=0;S.T[k]=.5;S.ses.x[k]=[]}
@@ -1192,9 +1192,8 @@ function evaluate(dt,t,faceOk){
   }
   if(!$('voiceCues').checked)x.sigh=0;
   for(const c of stepCues(dt,t,fuseRaw(x,sens(),t)))fire(c,t);
-  // for the session donut: time spent good, warning (signals rising) or with a nudge showing; and which signal led most
-  S.bk[t<S.nudgeUntil?'nudge':S.heat>=.25?'warn':'good']+=dt;
-  if(S.top&&S.topV>.25)S.topTime[S.top]=(S.topTime[S.top]||0)+dt;
+  // for the session donut: how long each expression or signal was showing (the same label the live screen shows)
+  {const k=exKey(faceOk);if(k)S.exT[k]=(S.exT[k]||0)+dt}
   if(radio('view')==='full'){setBg(Math.pow(clamp((S.heat-.05)/.6),.85));drawLive(dt,faceOk)} // one clear cue is already well on the way to red
   if(frame%3===0)render(t,faceOk,seeing,turned);
 }
@@ -1204,12 +1203,12 @@ function fire(c,t){
   S.moments.push(m);if(S.moments.length>500)S.moments.shift();
   // every triggered cue nudges, unless you chose Big (big moments only) or Off (review only)
   if(S.level==='off'||(S.level==='big'&&!big))return;
-  m.shown=true;S.shown++;S.lastNudge=t;S.alertUntil=t+5000;S.nudgeUntil=t+4000;$('nudgeCount').textContent=S.shown;
+  m.shown=true;S.shown++;S.lastNudge=t;S.alertUntil=t+5000;$('nudgeCount').textContent=S.shown;
   const say=CUES[c].say;let msg=c==='words'&&S.wordMsg?S.wordMsg:say[S.vari++%say.length];
   const parts=comboParts(t);
   if(parts.length>=2){
     const list=parts.length===2?parts.join(' and '):parts.slice(0,-1).join(', ')+' and '+parts[parts.length-1];
-    m.combo=parts.join(' + ');S.combo=m.combo;S.comboUntil=t+4000;m.big=true;
+    m.combo=parts.join(' + ');S.combo=m.combo;S.comboUntil=t+5000;m.big=true;
     msg=`${list[0].toUpperCase()+list.slice(1)} together. Pause, and take a long exhale before you respond.`+(c==='words'&&S.wordMsg?' '+S.wordMsg.split('. ').slice(1).join('. '):'');
   }
   const a=$('alert');a.textContent=msg;a.classList.add('hot');
@@ -1247,6 +1246,13 @@ function drawLive(dt,faceOk){
   if(sig!==S.sig){S.sig=sig;$('liveFace').innerHTML=faceSVG(S.fp,rgbStr(S.ff))}
 }
 function bar(id,v){const e=$(id);e.style.width=(clamp(v)*100).toFixed(0)+'%';e.style.background=v>.66?'var(--coral)':v>.33?'var(--moon)':'var(--mint)'}
+// what the live screen is showing right now: the leading signal, 'smile', 'neutral', or null when the face is out of view
+function exKey(faceOk){
+  if(S.topV>.25&&S.top)return S.top;
+  if(face&&hasVideo&&!faceOk)return null;
+  const P=S.prof&&S.prof.setup,F=S.base.fb;
+  return S.v&&F&&S.v.smile>F.smile+.5*((P?P.smileHi:.8)-F.smile)?'smile':'neutral';
+}
 function render(t,faceOk,seeing,turned){
   const h=S.heat,col=h<.25?'var(--mint)':h<.5?'var(--moon)':'var(--coral)';
   $('slabel').textContent=h<.25?'Steady':h<.5?'Rising':'Pause';
@@ -1259,11 +1265,11 @@ function render(t,faceOk,seeing,turned){
   bar('bPitch',S.bad.pitch);$('vPitch').textContent=off||(talking&&V.pitch?Math.round((2**(S.st/12)-1)*100):0)+'%';
   bar('bFast',S.bad.fast);$('vFast').textContent=off||(talking&&V.rate&&S.rate?(S.rate/V.rate).toFixed(1):'1.0')+'x';
   bar('bHog',S.bad.hog);$('vHog').textContent=!hasAudio?'off':Math.round(S.share*100)+'%';
-  const top=S.topV>.25?S.top:null,P=S.prof&&S.prof.setup,F=S.base.fb;let ex='Neutral',rd='Steady';
+  const k=exKey(faceOk);let ex='Neutral',rd='Steady';
   if(t<S.comboUntil&&S.combo){ex=S.combo[0].toUpperCase()+S.combo.slice(1);rd='Can read as impatient or upset'}
-  else if(top){ex=CUES[top].ex;rd=CUES[top].rd}
-  else if(face&&hasVideo&&!faceOk){ex='Face not in view';rd=''}
-  else if(S.v&&F&&S.v.smile>F.smile+.5*((P?P.smileHi:.8)-F.smile)){ex='Smiling';rd='Reads as open'}
+  else if(k===null){ex='Face not in view';rd=''}
+  else if(k==='smile'){ex='Smiling';rd='Reads as open'}
+  else if(k!=='neutral'){ex=CUES[k].ex;rd=CUES[k].rd}
   if($('exName').textContent!==ex){$('exName').textContent=ex;$('exRead').textContent=rd}
   const a=$('alert');
   if(t>S.alertUntil){
@@ -1289,7 +1295,7 @@ function end(){
   if(was!=='live'){S.mode='idle';show('intro');return}
   const mins=(performance.now()-S.t0)/60000,M=S.moments,shown=M.filter(m=>m.shown).length;
   const recs=M.map(m=>m.rec).filter(r=>r!=null),rec=recs.length?Math.round(med(recs)):null;
-  const len=mins<1?Math.max(1,Math.round(mins*60))+' seconds':Math.round(mins)+' minute'+(Math.round(mins)===1?'':'s');
+  const sec=Math.max(1,Math.round(mins*60)),len=mins<1?sec+' second'+(sec===1?'':'s'):Math.round(mins)+' minute'+(Math.round(mins)===1?'':'s');
   const pl=(n,w)=>n+' '+w+(n===1?'':'s');
   // recovery-focused, in kind words: no score, nothing for a still face
   let line=!M.length?`${len}. Nothing stood out. A steady meeting.`:`${len}. ${pl(M.length,'moment')} stood out`+(rec!=null?`, and you came back in about ${pl(rec,'second')}`:'')+'.';
@@ -1316,21 +1322,30 @@ function end(){
   reviewReset(true);
   S.mode='done';show('summary');
 }
-// ---- the session donut ----
-const SEGS=[['good','Good','var(--good)','steady'],['warn','Warning','var(--warn)','signals rising'],['nudge','Nudge','var(--nudge)','a nudge showing']];
+// ---- the session donut: share of the meeting spent with each expression or signal ----
+// Colors go by position around the ring, in this order, so neighbors are always a pair checked for color-blind
+// separation on the navy background (the wrap from the last slice back to the first is checked too).
+const SLOT=['#3987e5','#d95926','#199e70','#c98500','#d55181','#0ca30c'];
+const exInfo=k=>k==='neutral'?{name:'Neutral',ex:CALM,fill:MOONS}:k==='smile'?{name:'Smiling',ex:EXPR.happy,fill:MOONS}:
+  k==='other'?{name:'Other signals',ex:EXPR.meh,fill:'#c4cbe8'}:{name:CUES[k].label,ex:EXPR[k],fill:CUES[k].fill};
 function sessionDonut(){
-  const bk=S.bk,tot=bk.good+bk.warn+bk.nudge,svg=$('donutSvg'),leg=$('legend');
+  const T=S.exT,tot=Object.values(T).reduce((a,b)=>a+b,0),svg=$('donutSvg'),leg=$('legend');
   svg.textContent='';leg.textContent='';$('donutWrap').hidden=false;
-  // the face shows the session's most common signal, or a calm or happy face when it was mostly steady
-  const lead=Object.keys(S.topTime).sort((a,b)=>S.topTime[b]-S.topTime[a])[0],good=tot?bk.good/tot:1;
-  $('sumFace').innerHTML=good>=.9||!lead?faceSVG(EXPR.happy,MOONS):good>=.75?faceSVG(CALM,MOONS):faceSVG(EXPR[lead],CUES[lead].fill);
-  $('donutNote').textContent=(tot?'Share of the meeting spent steady, with signals rising, or with a nudge showing. Tap a slice to see it.':'')+(lead&&good<.9?` Most common signal: ${CUES[lead].label.toLowerCase()}.`:'');
+  // the face shows the session's most common signal, or a calm or happy face when it was mostly neutral
+  const sig=Object.keys(T).filter(k=>CUES[k]&&T[k]>0).sort((a,b)=>T[b]-T[a]),lead=sig[0],calm=tot?((T.neutral||0)+(T.smile||0))/tot:1;
+  S.donutFace=calm>=.9||!lead?faceSVG(EXPR.happy,MOONS):calm>=.75?faceSVG(CALM,MOONS):faceSVG(EXPR[lead],CUES[lead].fill);
+  $('sumFace').innerHTML=S.donutFace;
+  $('donutNote').textContent=(tot?'How long each expression or signal was showing. Tap a slice to see its face.':'')+(lead&&calm<.9?` Most common signal: ${CUES[lead].label.toLowerCase()}.`:'');
   if(!tot)return;
+  // at most six slices: neutral, smiling, then the biggest signals; the rest (and any under 1%) fold into Other signals
+  const items=['neutral','smile'].filter(k=>T[k]>0).map(k=>[k,T[k]]),room=6-items.length,big=sig.filter(k=>T[k]/tot>=.01);
+  const keep=sig.length>Math.min(big.length,room)?big.slice(0,room-1):big,rest=sig.filter(k=>!keep.includes(k)).reduce((a,k)=>a+T[k],0);
+  for(const k of keep)items.push([k,T[k]]);if(rest>0)items.push(['other',rest]);
   const R=92,C=2*Math.PI*R,NS='http://www.w3.org/2000/svg',el=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e};
-  let a0=0;const shown=SEGS.filter(([k])=>bk[k]>0),gap=shown.length>1?3:0;
-  for(const [k,name,col,what] of shown){
-    const f=bk[k]/tot,pct=Math.round(f*100),len=Math.max(.5,f*C-gap),mid=(a0+f*180)*Math.PI/180-Math.PI/2;
-    const g=el('g',{class:'seg',tabindex:'0',role:'button','aria-pressed':'false','aria-label':`${name}, ${what}: ${pct} percent of the meeting`,'data-k':k});
+  let a0=0;const gap=items.length>1?3:0;
+  items.forEach(([k,v],i)=>{
+    const col=SLOT[i],{name,ex,fill}=exInfo(k),f=v/tot,pct=f<.005?'<1':String(Math.round(f*100)),len=Math.max(.5,f*C-gap),mid=(a0+f*180)*Math.PI/180-Math.PI/2;
+    const g=el('g',{class:'seg',tabindex:'0',role:'button','aria-pressed':'false','aria-label':`${name}: ${pct} percent of the meeting`,'data-k':k});
     g.dataset.dx=(Math.cos(mid)*12).toFixed(1);g.dataset.dy=(Math.sin(mid)*12).toFixed(1);
     const rot=`rotate(${(a0-90).toFixed(2)})`;
     g.append(el('circle',{class:'hit',r:R,fill:'none','stroke-width':40,'stroke-dasharray':`${len} ${C}`,transform:rot}),
@@ -1338,20 +1353,23 @@ function sessionDonut(){
     const tx=el('text',{x:(Math.cos(mid)*(R+30)).toFixed(1),y:(Math.sin(mid)*(R+30)+6).toFixed(1),'text-anchor':'middle'});tx.textContent=pct+'%';g.append(tx);
     g.onclick=()=>popSeg(k);g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();popSeg(k)}};
     svg.append(g);a0+=f*360;
+    // the legend swatch is the slice's face, ringed in the slice's color, so identity never rests on color alone
     const li=document.createElement('li'),b=document.createElement('button');b.type='button';b.dataset.k=k;b.setAttribute('aria-pressed','false');
-    const sw=document.createElement('span');sw.className='swatch';sw.style.background=col;sw.setAttribute('aria-hidden','true');
+    const sw=document.createElement('span');sw.className='swatch';sw.innerHTML=faceSVG(ex,fill);sw.style.setProperty('--c',col);sw.setAttribute('aria-hidden','true');
     b.append(sw,`${name} ${pct}%`);b.onclick=()=>popSeg(k);li.append(b);leg.append(li);
-  }
+  });
 }
-// tapping a slice (or its legend entry) pulls it away from the ring, thickens it and shows its percentage
+// tapping a slice (or its legend entry) pulls it away from the ring, thickens it, shows its percentage and puts its face in the middle
 function popSeg(k){
+  let shown=null;
   for(const g of $('donutSvg').querySelectorAll('.seg')){
-    const on=g.dataset.k===k&&!g.classList.contains('pop');
+    const on=g.dataset.k===k&&!g.classList.contains('pop');if(on)shown=g.dataset.k;
     g.classList.toggle('pop',on);g.setAttribute('aria-pressed',String(on));
     g.style.transform=on?`translate(${g.dataset.dx}px,${g.dataset.dy}px)`:'';
     g.querySelector('.arc').setAttribute('stroke-width',on?28:18);
   }
-  for(const b of $('legend').querySelectorAll('button'))b.setAttribute('aria-pressed',String(!!$('donutSvg').querySelector(`.seg.pop[data-k=${b.dataset.k}]`)));
+  for(const b of $('legend').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.k===shown));
+  const I=shown&&exInfo(shown);$('sumFace').innerHTML=I?faceSVG(I.ex,I.fill):S.donutFace;
 }
 
 // Feedback on the whole meeting, instead of judging each moment from memory: Too many raises the triggers of the
