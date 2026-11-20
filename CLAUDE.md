@@ -15,6 +15,7 @@ Every feature should serve that goal: noticing a reaction early, interrupting it
 - Nudges cue an action that lowers arousal or carries out the user's plan ("Brow tight. Long exhale."). They never ask the user to fake or fix their face, because suppression is linked to worse memory, strained rapport and burnout.
 - Success is measured by recovery time and fewer moments over time, not by a calm score. (An "I caught it" button was tried and removed at the owner's request as too distracting.)
 - Signals are read together: face, body (hand to forehead, eyes or temple; head shaking; eyes shut), voice (loudness, pitch, pace, sighs) and words. Signals from different channels within 3 s boost each other and give one combined nudge.
-- The review stays short: a self-rating, right or wrong on each moment (which tunes thresholds), and one plan.
+- The review stays short: a self-rating, a donut of the session (good, warning, nudge time) around the face of the session's most common signal, and one question, "How were the nudges?" (Too many, About right, Too few, then which channels), which tunes thresholds. Per-moment right or wrong marks and plans were removed at the owner's request (hard to judge from memory).
+- Every page has a Font Awesome account icon at the top right (sign out, delete this device's data).
 - Owner decisions: the meeting view defaults to Full color (navy to red screen plus the face), and every triggered cue nudges (no global gap or per-meeting cap). Private view and Auto fading exist only as options the user can choose.
 - Research behind these choices: `reports/Emotion signals and workplace judgment.md`.
