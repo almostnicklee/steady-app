@@ -1,363 +1,945 @@
 <!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#10131c">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#152465">
+<meta name="description" content="Steady is a private, on-device coach for how you come across in meetings.">
 <title>Steady</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
 <style>
-/* VOICE calm, private, coach-like
-   IDEA a pulse monitor for how you come across
-   PICTURE one large live score ring
-   COLOUR night ink ground, calm blue, amber and red only when something slips
-   TYPE Figtree; LAYOUT one column for a phone held upright */
-:root{--bg:#10131c;--card:#181c28;--ink:#eef1f7;--mute:#9aa3b5;--calm:#7cc4ff;--warn:#ffb547;--bad:#ff5d5d;--line:#262b3b}
+/* VOICE warm, plain, encouraging. Describe what is visible, never label a feeling.
+   IDEA a friendly round face that mirrors how you are coming across in a meeting
+   PICTURE one face on a night sky; the whole screen warms from navy to red as things slip
+   COLOUR night navy ground, moon yellow for actions, pastel faces, deep red only when it is bad
+   TYPE Nunito, heavy for names and states, medium for reading; LAYOUT one column for a phone held upright */
+:root{--night:#152465;--ink:#1b2350;--moon:#ffd978;--coral:#ff8d6e;--mint:#9fe6bf;--soft:rgba(255,255,255,.8);--panel:rgba(255,255,255,.09);--line:rgba(255,255,255,.2);--deep:rgba(10,14,40,.3)}
 *{box-sizing:border-box;min-width:0}
 html,body{margin:0;min-height:100%}
-body{background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overflow-x:clip}
-main{max-width:520px;margin:0 auto;padding:20px 18px 48px}
-h1{font-size:36px;line-height:1.05;margin:8px 0 6px;font-weight:800}
-h2{font-size:18px;margin:0 0 6px}
-.sub{color:var(--mute);margin:0 0 16px}
+body{background:var(--night);color:#fff;font:500 16px/1.5 Nunito,ui-rounded,"Arial Rounded MT Bold",system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overflow-x:clip;transition:background-color .25s linear}
+main{position:relative;max-width:520px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) 20px 48px}
+h1{font-size:40px;line-height:1.05;margin:0 0 10px;font-weight:900;letter-spacing:-.01em}
+h2{font-size:20px;line-height:1.2;margin:0 0 10px;font-weight:800}
+p{margin:0 0 12px}
+.sub{color:var(--soft);font-size:17px;margin:0 0 22px}
+.note{font-size:14px;color:var(--soft)}
 .view{display:none}.view.on{display:block}
-button{font:inherit;font-weight:600;border:0;border-radius:14px;min-height:50px;padding:0 18px;cursor:pointer}
-.primary{background:var(--calm);color:#06121f;width:100%;font-size:17px}
-.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
-button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:14px 0}
-ol,ul{padding-left:20px;margin:6px 0;color:var(--mute)}li{margin:4px 0}
-.ring{position:relative;width:min(68vw,250px);aspect-ratio:1;margin:6px auto 10px}
-.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.ring circle{fill:none;stroke-width:14}
-#arc{stroke:var(--calm);stroke-linecap:round;transition:stroke-dashoffset .3s,stroke .4s}
-.num{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
-.num b{font-size:clamp(56px,18vw,80px);font-weight:800;line-height:1}
-.num small{color:var(--mute);font-size:14px}
-.cam{position:fixed;top:12px;right:12px;width:78px;height:104px;border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#000;z-index:5}
-.cam video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
-.alert{min-height:66px;border-radius:16px;padding:14px 16px;font-weight:600;font-size:18px;background:var(--card);border:1px solid var(--line);transition:background .3s,border-color .3s}
-.alert.hot{background:#3a2112;border-color:var(--warn);color:#ffe2b8}
-.meters{display:grid;gap:12px}
-.m{display:grid;grid-template-columns:5.6em minmax(0,1fr) 3.4em;align-items:center;gap:10px;font-size:14px;color:var(--mute)}
-.bar{height:10px;border-radius:6px;background:#0b0e15;overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--calm);transition:width .25s,background .25s}
-.m span:last-child{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
-.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.row>*{flex:1 1 140px}
-.read{font-size:20px;line-height:1.45;font-weight:600;margin:8px 0}
-.count{font-size:64px;font-weight:800;text-align:center;line-height:1.1}
+.view>h2{margin-top:32px}
+button{font:inherit;font-weight:800;border:0;border-radius:999px;min-height:54px;padding:0 24px;cursor:pointer;color:#fff;background:none}
+.primary{background:var(--moon);color:var(--ink);width:100%;font-size:18px}
+.ghost{background:var(--deep);box-shadow:inset 0 0 0 2px var(--line)}
+:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.panel{background:var(--panel);border-radius:26px;padding:16px 20px;margin:18px 0}
+.face svg{display:block;width:100%;height:100%}
+
+/* intro */
+.hero{position:relative;height:200px;margin:0 0 14px}
+.hero .sky{position:absolute;inset:0;width:100%;height:100%}
+.hero .face{position:absolute;left:50%;top:50%;width:146px;height:146px;margin:-73px 0 0 -73px;animation:breathe 6s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.045)}}
+.steps{list-style:none;padding:0;margin:0;counter-reset:s}
+.steps li{position:relative;padding:4px 0 14px 50px;color:var(--soft);counter-increment:s}
+.steps li::before{content:counter(s);position:absolute;left:0;top:2px;width:36px;height:36px;border-radius:50%;background:var(--panel);color:#fff;font-weight:900;display:grid;place-content:center}
+.steps b{color:#fff;font-weight:800}
+.cues{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 4px;margin:4px -4px 8px}
+.cue{min-height:0;padding:8px 2px 10px;border-radius:22px;display:grid;justify-items:center;gap:7px;font-size:13px;font-weight:700;line-height:1.2}
+.cue .face{width:56px;height:56px}
+.cue.on{background:var(--panel)}
+.set{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:54px;font-weight:700}
+.seg{display:flex;background:var(--deep);border-radius:999px;padding:4px}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.seg span{display:grid;place-content:center;min-height:40px;padding:0 13px;border-radius:999px;font-weight:800;font-size:15px}
+.seg input:checked+span{background:var(--moon);color:var(--ink)}
+.seg input:focus-visible+span{outline:3px solid #fff;outline-offset:2px}
+.sw{appearance:none;-webkit-appearance:none;flex:none;width:58px;height:34px;border-radius:999px;background:var(--deep);box-shadow:inset 0 0 0 2px var(--line);position:relative;cursor:pointer;margin:0;transition:background .2s}
+.sw::after{content:"";position:absolute;top:5px;left:5px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw:checked{background:var(--mint);box-shadow:none}
+.sw:checked::after{transform:translateX(24px);background:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+td{padding:9px 0;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:800}
+tr:last-child td{border-bottom:0}
+
+/* camera: small tile during a session, large with a head outline during setup */
+.cam{position:absolute;top:max(16px,env(safe-area-inset-top));right:20px;width:72px;height:96px;border-radius:20px;overflow:hidden;box-shadow:0 0 0 3px rgba(255,255,255,.3);background:#0b1030;z-index:5}
+.cam video{display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.cam.big{--h:min(46vh,440px,(100vw - 40px)/.75);position:relative;top:auto;right:auto;margin:2px auto 16px;height:var(--h);width:calc(var(--h)*.75);border-radius:32px;box-shadow:0 0 0 4px rgba(255,255,255,.22)}
+@supports (height:1dvh){.cam.big{--h:min(46dvh,440px,(100vw - 40px)/.75)}}
+.cam.big video{transform:scaleX(-1) scale(1.3)}
+.guide{display:none;position:absolute;inset:0;width:100%;height:100%}
+.cam.big .guide{display:block}
+.guide .shade{fill:rgba(10,14,50,.5)}
+.guide .line{fill:none;stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-dasharray:1.5 11;transition:stroke .25s}
+.guide.ok .line{stroke:var(--mint);stroke-dasharray:none}
+.count{display:none}
+.count.on{display:grid;place-content:center;position:relative;z-index:6;width:76px;height:46px;margin:-80px auto 34px;border-radius:999px;background:var(--moon);color:var(--ink);font-weight:900;font-size:26px;font-variant-numeric:tabular-nums}
+.count.solo{margin:8px auto 18px}
+.status{font-size:20px;font-weight:800;line-height:1.3;text-align:center;margin:0 0 14px;min-height:52px;display:grid;align-items:center}
+.read{font-size:19px;line-height:1.45;font-weight:700;margin:8px 0 10px;color:#fff}
+
+/* live */
+.top{min-height:96px;padding-right:92px}
+.state{font-size:38px;font-weight:900;line-height:1.05;margin:0}
+.scoreLine{font-size:17px;font-weight:700;margin:6px 0 0}
+.stage{position:relative;width:min(56vw,214px);aspect-ratio:1;margin:4px auto 18px}
+.ringsvg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.ringsvg circle{fill:none;stroke-width:6}
+.ringsvg .track{stroke:rgba(255,255,255,.22)}
+#arc{stroke:#fff;stroke-linecap:round;transition:stroke-dashoffset .3s}
+.stage .face{position:absolute;inset:10%}
+.alert{min-height:66px;border-radius:24px;padding:14px 18px;font-weight:800;font-size:19px;line-height:1.3;background:var(--deep);display:grid;align-items:center;transition:background .25s,color .25s}
+.alert.hot{background:#fff;color:var(--ink)}
+.demo{min-height:54px;font-size:16px;margin:0 0 4px}
+.meters{background:var(--deep);display:grid;gap:12px}
+.m{display:grid;grid-template-columns:5.2em minmax(0,1fr) 4.4em;align-items:center;gap:10px;font-size:14px;font-weight:700}
+.bar{height:10px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:6px;background:var(--mint);transition:width .25s,background .25s}
+.m span:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.meters .note{margin:0;color:rgba(255,255,255,.9)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.row>*{flex:1 1 140px}
+
+/* summary */
+#summary{text-align:center}
+#summary .panel{text-align:left}
+.sumFace{width:146px;height:146px;margin:14px auto 20px}
+
+/* sign-in */
+.fld{display:block;font-weight:700;margin:0 0 14px}
+.fld input{display:block;width:100%;margin-top:6px;min-height:54px;padding:0 18px;border-radius:18px;border:2px solid rgba(255,255,255,.55);background:var(--deep);color:#fff;font:inherit;font-weight:700}
+.link{min-height:44px;padding:0 4px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+button:disabled{opacity:.55;cursor:default}
+
 #discreet{position:fixed;inset:0;background:#000;display:none;place-items:center;z-index:20}
 #discreet.on{display:grid}
-#dot{width:44px;height:44px;border-radius:50%;background:var(--calm);box-shadow:0 0 28px var(--calm);transition:background .4s,box-shadow .4s,transform .2s}
-#dhint{position:absolute;bottom:24px;color:#555;font-size:13px}
-label.t{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:46px}
-select{font:inherit;font-size:16px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px}
-input[type=checkbox]{width:24px;height:24px;accent-color:var(--calm)}
-.note{font-size:13px;color:var(--mute)}
-table{width:100%;border-collapse:collapse;font-size:15px}td{padding:8px 0;border-bottom:1px solid var(--line)}td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+#dot{width:44px;height:44px;border-radius:50%;background:var(--mint);box-shadow:0 0 28px var(--mint);transition:background .4s,box-shadow .4s,transform .2s}
+#dhint{position:absolute;bottom:24px;color:#8a8a8a;font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head>
 <body>
-<div class="cam" id="cam" hidden><video id="vid" playsinline muted></video></div>
 <main>
+<div class="cam" id="cam" hidden>
+  <video id="vid" playsinline muted aria-label="Your camera preview"></video>
+  <svg class="guide" id="guide" viewBox="0 0 300 400" aria-hidden="true">
+    <path class="shade" fill-rule="evenodd" d="M0 0H300V400H0ZM150 60C198 60 234 98 234 154C234 216 202 286 150 286C98 286 66 216 66 154C66 98 102 60 150 60Z"/>
+    <path class="line" d="M150 60C198 60 234 98 234 154C234 216 202 286 150 286C98 286 66 216 66 154C66 98 102 60 150 60Z"/>
+    <path class="line" d="M38 398C44 352 94 326 150 326C206 326 256 352 262 398"/>
+  </svg>
+</div>
 
-<section id="intro" class="view on">
+<section id="gate" class="view on">
+  <div class="hero" aria-hidden="true"><div class="face" id="gateFace"></div></div>
   <h1>Steady</h1>
-  <p class="sub">A live coach for how you come across in conversation. It watches your face and listens to your voice, then warns you before a reaction lands badly.</p>
+  <p class="sub">Sign in to open your coach.</p>
+  <form id="gform" novalidate>
+    <label class="fld">Email<input type="email" id="uEmail" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" required></label>
+    <label class="fld">Password<input type="password" id="uPass" autocomplete="current-password" required></label>
+    <label class="set">Keep me signed in on this device <input type="checkbox" class="sw" id="uKeep" role="switch"></label>
+    <button class="primary" id="uGo" type="submit" style="margin-top:10px">Sign in</button>
+    <p class="note" style="margin-top:14px;min-height:22px"><span id="uMsg" role="status" aria-live="polite"></span> <span id="uWait" aria-hidden="true"></span></p>
+  </form>
+</section>
+
+<section id="intro" class="view">
+  <div class="hero" aria-hidden="true">
+    <svg class="sky" viewBox="0 0 400 200">
+      <path fill="#22348d" d="M43 118C28 58 93 16 163 30C215 4 305 14 340 66C377 106 358 174 292 180C240 198 165 194 115 184C72 182 52 154 43 118Z"/>
+      <circle cx="40" cy="36" r="6" fill="#ff8d6e"/><circle cx="366" cy="30" r="8" fill="#9fe6bf"/><circle cx="352" cy="186" r="5" fill="#cdbaf3"/><circle cx="64" cy="190" r="4" fill="#ffd978"/>
+    </svg>
+    <div class="face" id="heroFace"></div>
+  </div>
+  <h1>Steady</h1>
+  <p class="sub">A quiet coach for your meetings. It watches your face and listens to your voice, then nudges you the moment a reaction might land badly.</p>
   <button class="primary" id="go">Start a session</button>
-  <div class="card">
-    <h2>How to use it</h2>
-    <ol>
-      <li>Prop the phone up facing you, about arm's length away, with your face in good light.</li>
-      <li>Do the 15 second calibration so it learns your normal face and voice.</li>
-      <li>Have your conversation. Glance at the score, or switch to Discreet and feel a buzz when something slips.</li>
-    </ol>
+
+  <h2>Set up in a minute</h2>
+  <ol class="steps">
+    <li><b>Point a camera at your face.</b> Prop your phone beside your laptop, or open Steady in a browser window next to your video call.</li>
+    <li><b>Line up with the outline.</b> A 15 second setup learns your normal face and voice.</li>
+    <li><b>Just meet.</b> The screen stays navy while you look and sound steady, and warms toward red when something slips.</li>
+  </ol>
+
+  <h2>What Steady notices</h2>
+  <div class="cues" id="cues" role="group" aria-label="Cues Steady notices. Choose one to preview its nudge."></div>
+  <p class="alert demo" id="demo" role="status" aria-live="polite">Tap a face to preview its nudge.</p>
+
+  <div class="panel">
+    <div class="set" role="radiogroup" aria-labelledby="sensL"><span id="sensL">Sensitivity</span>
+      <div class="seg">
+        <label><input type="radio" name="sens" value="low"><span>Low</span></label>
+        <label><input type="radio" name="sens" value="med" checked><span>Medium</span></label>
+        <label><input type="radio" name="sens" value="high"><span>High</span></label>
+      </div>
+    </div>
+    <label class="set">Vibrate on nudges <input type="checkbox" class="sw" id="vib" role="switch" checked></label>
+    <label class="set">Chime on nudges <input type="checkbox" class="sw" id="chime" role="switch"></label>
+    <label class="set">Remember my normal <input type="checkbox" class="sw" id="rem" role="switch" aria-describedby="remNote"></label>
+    <p class="note" id="remNote" style="margin:0 0 6px"></p>
   </div>
-  <div class="card">
-    <label class="t">Sensitivity
-      <select id="sens"><option value="low">Low</option><option value="med" selected>Medium</option><option value="high">High</option></select></label>
-    <label class="t">Vibrate on warnings <input type="checkbox" id="vib" checked></label>
-  </div>
-  <div class="card">
-    <h2>Privacy</h2>
-    <p class="note">Everything is analyzed on this phone, in memory. No video or audio is recorded, saved, or uploaded. The mic will hear the other person, but voice cues only count while your own mouth is moving. Only session scores are kept, on this phone.</p>
-  </div>
-  <div class="card" id="histCard" hidden><h2>Recent sessions</h2><table id="hist"></table></div>
-  <p class="note">Steady is a practice aid, not a medical or diagnostic tool. Cues are estimates and will sometimes be wrong.</p>
+
+  <h2>Private by design</h2>
+  <p class="note">Everything is analyzed on this device, in memory. No video or audio is recorded, saved, or uploaded. The mic will hear other people, but voice cues only count while your own mouth is moving, and nothing anyone says is transcribed or kept. Your session scores and settings are saved on this device. If you turn on Remember my normal, a small profile is saved here too: numbers such as your resting brow reading, your usual pitch and pace, and your normal range for each cue. It holds no audio, video or images, it is encrypted with your sign-in, and turning the switch off deletes it. The app's code and models download from public libraries (jsDelivr and Google); they receive an ordinary web request, never your camera or microphone.</p>
+  <div id="histCard" hidden><h2>Recent sessions</h2><table id="hist"></table></div>
+  <p style="margin:18px 0 0"><button class="link" id="out" type="button">Sign out</button></p>
+  <p class="note" style="margin-top:14px">Steady is a self-coaching aid for your own use. It reads visible expressions and voice level, not feelings, and its cues are estimates that will sometimes be wrong. It is not a medical or diagnostic tool, and it is not for monitoring or evaluating other people.</p>
 </section>
 
 <section id="calib" class="view">
-  <h1>Calibrating</h1>
-  <p class="sub" id="cstat">Getting ready...</p>
-  <div class="card">
-    <p class="note">Keep a relaxed, neutral face and read this out loud in your normal voice. When you finish, keep talking about your day until the timer ends.</p>
+  <div class="count" id="ccount" aria-hidden="true">15</div>
+  <p class="status" id="cstat" role="status" aria-live="polite">Getting ready...</p>
+  <div class="panel">
+    <p class="note">Keep a relaxed, neutral face and read this out loud in your normal voice. Then keep talking until the timer ends.</p>
     <p class="read">"Yesterday I walked to the corner store, picked up a few things for dinner, and chatted with a neighbor about the weather and our plans for the weekend."</p>
+    <p class="note" style="margin:0">Already in a meeting? Stay quiet and neutral instead. Steady will learn your voice from your first few sentences.</p>
   </div>
-  <div class="count" id="ccount">15</div>
-  <button class="ghost" id="cback" hidden style="width:100%">Back</button>
+  <div class="row"><button class="ghost" id="cskip" hidden>Start anyway</button><button class="ghost" id="cback">Cancel</button></div>
 </section>
 
 <section id="live" class="view">
-  <div class="ring">
-    <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" stroke="#0b0e15"/><circle id="arc" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="0"/></svg>
-    <div class="num"><b id="score">100</b><small id="slabel">Steady</small></div>
+  <div class="top"><p class="state" id="slabel">Steady</p><p class="scoreLine">Score <b id="score">100</b></p></div>
+  <div class="stage">
+    <svg class="ringsvg" viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="56"/><circle id="arc" cx="60" cy="60" r="56" stroke-dasharray="351.9" stroke-dashoffset="0"/></svg>
+    <div class="face" id="liveFace" aria-hidden="true"></div>
   </div>
   <div class="alert" id="alert" role="status" aria-live="polite">Looking steady.</div>
-  <div class="card meters">
+  <div class="panel meters">
     <div class="m"><span>Face</span><div class="bar"><i id="bFace"></i></div><span id="vFace">ok</span></div>
     <div class="m"><span>Volume</span><div class="bar"><i id="bLoud"></i></div><span id="vLoud">0 dB</span></div>
     <div class="m"><span>Pitch</span><div class="bar"><i id="bPitch"></i></div><span id="vPitch">0%</span></div>
     <div class="m"><span>Pace</span><div class="bar"><i id="bFast"></i></div><span id="vFast">1.0x</span></div>
-    <div class="m"><span>Talk share</span><div class="bar"><i id="bHog"></i></div><span id="vHog">0%</span></div>
-    <p class="note" id="liveNote" style="margin:0">Bars fill as a cue drifts from your baseline.</p>
+    <div class="m"><span>Talk time</span><div class="bar"><i id="bHog"></i></div><span id="vHog">0%</span></div>
+    <p class="note" id="liveNote">Bars fill as a cue drifts from your normal.</p>
   </div>
   <div class="row"><button class="ghost" id="disc">Discreet mode</button><button class="ghost" id="stop">End session</button></div>
 </section>
 
 <section id="summary" class="view">
+  <div class="face sumFace" id="sumFace" aria-hidden="true"></div>
   <h1>Session done</h1>
   <p class="sub" id="sumLine"></p>
-  <div class="card"><h2>Warnings</h2><table id="sumTable"></table></div>
+  <div class="panel"><h2>Nudges</h2><table id="sumTable"></table></div>
+  <div class="panel" id="remAsk" hidden>
+    <h2>Remember your normal?</h2>
+    <p class="note">Steady can save a small profile on this device: numbers such as your resting brow reading, your usual pitch and pace, and your normal range for each cue. No audio, video or images. Your baseline then fits you better each time. Turning it off on the start screen deletes it.</p>
+    <div class="row" style="margin-top:8px"><button class="primary" id="remYes" type="button" style="width:auto;font-size:16px;padding:0 12px">Save profile</button><button class="ghost" id="remNo" type="button">Not now</button></div>
+  </div>
+  <p class="note" id="remDone" hidden>Saved on this device. You can turn it off on the start screen.</p>
   <button class="primary" id="again">Back to start</button>
 </section>
 </main>
-<div id="discreet"><div id="dot"></div><div id="dhint">Tap anywhere to exit</div></div>
+<div id="discreet" role="button" tabindex="-1" aria-label="Discreet mode is on. Activate to exit."><div id="dot"></div><div id="dhint">Tap anywhere to exit</div></div>
 
 <script type="module">
 {
-const $=id=>document.getElementById(id);
-const VIEWS=['intro','calib','live','summary'];
-const show=v=>VIEWS.forEach(x=>$(x).classList.toggle('on',x===v));
+/*CORE-BEGIN*/
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
 const ema=(p,x,a)=>p+(x-p)*a;
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const med=a=>{if(!a.length)return 0;const b=[...a].sort((x,y)=>x-y);return b[b.length>>1]};
-const SENS={low:.7,med:1,high:1.35};
+const k1=(dt,tau)=>1-Math.exp(-dt/tau);
+const med=a=>{if(!a.length)return 0;const b=Array.from(a).sort((x,y)=>x-y);return b[b.length>>1]};
+const push=(a,v,n)=>{a.push(v);if(a.length>n)a.shift()};
+// average of the louder half: tracks how loud the syllables are, ignoring pauses and soft consonants
+const topMean=a=>{const b=Array.from(a).sort((x,y)=>y-x),n=Math.ceil(b.length/2);let s=0;for(let i=0;i<n;i++)s+=b[i];return n?s/n:0};
+
+// ---- voice maths, on 16 kHz mono audio ----
+const SR=16000,WIN=new Float32Array(1024),YD=new Float32Array(260);
+// YIN pitch tracker: returns the voice pitch in Hz, or 0 when the sound is not clearly voiced
+function yin(x,fmin=65,fmax=420){
+  const N=x.length,t0=Math.floor(SR/fmax),t1=Math.min(Math.ceil(SR/fmin),YD.length-2),W=N-t1-1;
+  let run=0;YD[0]=1;
+  for(let t=1;t<=t1+1;t++){let s=0;for(let j=0;j<W;j++){const v=x[j]-x[j+t];s+=v*v}run+=s;YD[t]=run>0?s*t/run:1}
+  let tau=0;
+  for(let t=t0;t<=t1;t++)if(YD[t]<.15){while(t<t1&&YD[t+1]<YD[t])t++;tau=t;break}
+  if(!tau){let m=.3;for(let t=t0;t<=t1;t++)if(YD[t]<m){m=YD[t];tau=t}if(!tau)return 0}
+  const a=YD[tau-1],b=YD[tau],c=YD[tau+1],den=a-2*b+c;
+  return SR/(tau+(den>1e-9?.5*(a-c)/den:0));
+}
+// Voice sharpness: energy above 1 kHz against energy below it, in dB. It climbs when a voice is pushed harder,
+// and unlike plain loudness it does not change when you lean toward the microphone.
+const FN=1024,FC=new Float32Array(FN/2),FS=new Float32Array(FN/2),FR=new Float32Array(FN),FI=new Float32Array(FN),HANN=new Float32Array(FN),REV=new Uint16Array(FN);
+for(let i=0;i<FN/2;i++){FC[i]=Math.cos(2*Math.PI*i/FN);FS[i]=Math.sin(2*Math.PI*i/FN)}
+for(let i=0;i<FN;i++){HANN[i]=.5-.5*Math.cos(2*Math.PI*i/FN);let r=0;for(let b=0;b<10;b++)r|=((i>>b)&1)<<(9-b);REV[i]=r}
+function tilt(x){
+  for(let i=0;i<FN;i++){FR[REV[i]]=x[i]*HANN[i];FI[i]=0}
+  for(let len=2;len<=FN;len<<=1){const half=len>>1,step=FN/len;
+    for(let i=0;i<FN;i+=len)for(let j=0,k=0;j<half;j++,k+=step){
+      const a=i+j,b=a+half,wr=FC[k],wi=-FS[k],tr=FR[b]*wr-FI[b]*wi,ti=FR[b]*wi+FI[b]*wr;
+      FR[b]=FR[a]-tr;FI[b]=FI[a]-ti;FR[a]+=tr;FI[a]+=ti}}
+  let lo=1e-12,hi=1e-12;
+  for(let i=4;i<64;i++)lo+=FR[i]*FR[i]+FI[i]*FI[i];
+  for(let i=64;i<=320;i++)hi+=FR[i]*FR[i]+FI[i]*FI[i];
+  return 10*Math.log10(hi/lo);
+}
+
+// 1 kHz low-pass for the syllable envelope: keeps vowels, drops hiss and clicks
+const LP=(()=>{const w=2*Math.PI*1000/SR,c=Math.cos(w),al=Math.sin(w)/1.4142,a0=1+al;return [(1-c)/2/a0,(1-c)/a0,(1-c)/2/a0,-2*c/a0,(1-al)/a0]})();
+
+// tau: how fast a cue builds (s). hold: how long it must stay high before a nudge (s). cool: gap between nudges (s).
 const CUES={
-  scowl:{w:1,msg:'Brow is tightening. Soften your face.',label:'Frown or scowl'},
-  tense:{w:.6,msg:'Lips pressed tight. Relax your jaw.',label:'Tight lips'},
-  sneer:{w:1,msg:'Possible sneer or smirk. Reset to neutral.',label:'Sneer or smirk'},
-  roll:{w:1.2,msg:'Eyes rolling up. Hold steady eye contact.',label:'Eye roll'},
-  loud:{w:1,msg:'Volume rising. Bring it down a notch.',label:'Getting loud'},
-  pitch:{w:.7,msg:'Pitch climbing. Slow exhale, lower your voice.',label:'Pitch rising'},
-  fast:{w:.7,msg:'Speeding up. Slow down and pause.',label:'Talking fast'},
-  hog:{w:.5,msg:'You have done most of the talking. Ask a question.',label:'Most of the talking'}
+  scowl:{w:1,tau:.35,hold:.7,msg:'Brow is tightening. Soften your face.',label:'Frown or scowl',short:'Scowl',fill:'#ffab8f'},
+  tense:{w:.6,tau:.45,hold:.9,msg:'Lips pressed tight. Relax your jaw.',label:'Tight lips',short:'Tight lips',fill:'#ffd98a'},
+  sneer:{w:1,tau:.25,hold:.4,msg:'That may read as a smirk. Reset to neutral.',label:'Sneer or smirk',short:'Smirk',fill:'#cdbaf3'},
+  roll:{w:1.2,tau:.12,hold:.25,msg:'Eyes rolling up. Bring them back level.',label:'Eye roll',short:'Eye roll',fill:'#aebcf5'},
+  loud:{w:1,tau:.4,hold:.6,msg:'Voice is rising. Bring it down a notch.',label:'Getting loud',short:'Loud',fill:'#ff9c8a'},
+  pitch:{w:.7,tau:.6,hold:1,msg:'Pitch is climbing. Breathe out and lower your voice.',label:'Pitch rising',short:'High pitch',fill:'#f8b6c8'},
+  fast:{w:.7,tau:1,hold:1.5,msg:'You are speeding up. Slow down and pause.',label:'Talking fast',short:'Rushing',fill:'#b4e4c8'},
+  hog:{w:.5,tau:2,hold:0,cool:60,msg:'You have held the floor for a while. Ask a question.',label:'Long stretch of talking',short:'Long turn',fill:'#a9d9f5'}
 };
-const MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
-const MP='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
-let stream=null,video=$('vid'),ctx=null,analyser=null,buf=null,face=null,lastVT=-1,wake=null,running=false,frame=0,lastT=0;
+// the resting look of the on-screen face (see faceSVG for what each number draws)
+const CALM={b:0,bo:0,by:0,eo:1,ea:1,lk:0,ld:0,mc:.6,mo:0,mw:1,mz:0,ma:0,bl:.6};
+const MTHR=.3; // default mouth movement (per second) that counts as "you are the one talking"
+let face=null,vad=null,hasVideo=false,hasAudio=false;
 const S={};
 
+function resetState(){
+  for(const k in S)delete S[k];
+  Object.assign(S,{mode:'idle',note:'',noise:-60,db:-90,vp:-1,speech:false,self:false,selfSeen:-1e9,lastF0:-1e9,
+    lvl:[],f0s:[],alphas:[],selfT:[],peaks:[],rate:0,lp:[0,0,0,0],eh:[-90,-90,-90,-90],env:-90,valley:-90,rising:false,lastPeak:0,
+    bs:{},prev:null,lm:null,faceT:0,faceSeen:-1e9,mouth:0,mouthUntil:0,pose:false,yaw:0,nod:0,
+    cal:{db:[],pitch:[],alpha:[],secs:0,peaks:0,mouthS:[],mouthI:[],brow:[],frown:[],press:[],sneer:[],asym:[],up:[],yaw:[],nod:[]},
+    learn:{db:[],pitch:[],alpha:[],secs:0,peaks:0},learnF:{brow:[],frown:[],press:[],sneer:[],asym:[],up:[],yaw:[],nod:[]},
+    base:null,bad:{},hold:{},cool:{},counts:{},heat:0,score:100,scores:[],lastSample:0,t0:0,alertUntil:0,
+    talk:new Float32Array(90),sec:-1,share:0,dL:0,st:0,top:null,topV:0,alignT:0,frameT0:0,calT0:0,hiddenAt:0,themeT:0,
+    fp:{...CALM},ff:[255,217,120],sig:'',off:{},prof:null,mute:0,mins:0,
+    ses:{brow:[],frown:[],press:[],sneer:[],asym:[],f0:[],rate:[],x:{}}});
+  for(const k in CUES){S.bad[k]=0;S.hold[k]=0;S.cool[k]=0;S.counts[k]=0;S.off[k]=0;S.ses.x[k]=[]}
+}
+
+// Silero voice activity model: one 32 ms chunk in, the chance that it contains speech out
+async function vadRun(x){
+  const v=vad;v.inp.copyWithin(0,512,576);v.inp.set(x,64);
+  const o=await v.sess.run({input:new v.T('float32',v.inp,[1,576]),state:v.state,sr:v.sr});
+  v.state=o.stateN;return o.output.data[0];
+}
+
+function voiceBase(A){
+  if(A.secs<4)return null;
+  return {db:topMean(A.db),pitch:A.pitch.length>25?med(A.pitch):0,alpha:A.alpha.length>25?med(A.alpha):null,rate:clamp(A.peaks/A.secs,1.5,7)};
+}
+
+// Runs once per 32 ms of microphone audio (512 samples at 16 kHz)
+async function onAudio(x){
+  const now=performance.now();
+  WIN.copyWithin(0,512);WIN.set(x,512);
+  let s=0;const lo=[0,0],q=S.lp;
+  for(let i=0;i<512;i++){const v=x[i];s+=v*v;const y=LP[0]*v+LP[1]*q[0]+LP[2]*q[1]-LP[3]*q[2]-LP[4]*q[3];q[1]=q[0];q[0]=v;q[3]=q[2];q[2]=y;lo[i>>8]+=y*y}
+  const db=10*Math.log10(s/512+1e-10);
+  S.db=db;S.noise=db<S.noise?ema(S.noise,db,.1):ema(S.noise,db,.0015);
+  let p=-1;
+  if(vad){try{p=await vadRun(x)}catch(e){console.warn(e);vad=null}}
+  const speech=now>=S.mute&&(p<0?db>S.noise+10:p>(S.speech?.35:.5)); // S.mute: skip our own chime
+  S.speech=speech;S.vp=p;
+  const live=S.mode==='live',cal=S.mode==='calib';
+  const faceOn=!!face&&hasVideo,faceOk=faceOn&&now-S.faceSeen<1200;
+  // speech only counts as yours while your mouth is moving (or always, when there is no camera)
+  const self=speech&&(cal||!faceOn||(faceOk&&now<S.mouthUntil));
+  S.self=self;
+  const A=cal?S.cal:live&&S.base&&!S.base.voice?S.learn:null;
+  let f0=0,al=null;
+  if(speech){f0=yin(WIN);if(f0){al=tilt(WIN);S.lastF0=now}}
+  // count syllables: peaks in the smoothed low-frequency loudness, in 16 ms steps
+  for(let h=0;h<2;h++){
+    const E=S.eh,e=10*Math.log10(lo[h]/256+1e-10),sm=(E[0]+2*E[1]+3*E[2]+2*E[3]+e)/9,tn=now-(1-h)*16;E[0]=E[1];E[1]=E[2];E[2]=E[3];E[3]=e;
+    if(!self){S.valley=sm;S.rising=false}
+    else if(sm>S.env)S.rising=true;
+    else if(sm<S.env){
+      if(S.rising){if(S.env-S.valley>4&&tn-S.lastPeak>90){S.peaks.push(tn);S.lastPeak=tn;if(A)A.peaks++}S.rising=false;S.valley=sm}
+      else S.valley=Math.min(S.valley,sm);
+    }
+    S.env=sm;
+  }
+  if(cal&&faceOk)(speech?S.cal.mouthS:S.cal.mouthI).push(S.mouth);
+  if(self){
+    S.selfSeen=now;S.selfT.push(now);
+    push(S.lvl,db,60);if(f0){push(S.f0s,f0,40);push(S.alphas,al,40)}
+    if(A){A.db.push(db);A.secs+=.032;if(f0){A.pitch.push(f0);A.alpha.push(al)}}
+  }else if(S.lvl.length&&now-S.selfSeen>3000){S.lvl.length=0;S.f0s.length=0;S.alphas.length=0}
+  while(S.selfT.length&&now-S.selfT[0]>8000)S.selfT.shift();
+  while(S.peaks.length&&now-S.peaks[0]>8000)S.peaks.shift();
+  const ss=S.selfT.length*.032;S.rate=ss>=3?S.peaks.length/ss:0; // syllables per second of your own speech, over the last 8 s
+  if(live){
+    const sec=Math.floor((now-S.t0)/1000);if(sec!==S.sec){S.sec=sec;S.talk[sec%90]=0}
+    if(self)S.talk[sec%90]+=.032;
+    if(A&&A.secs>=8)S.base.voice=voiceWith(voiceBase(A),S.prof); // stayed quiet in setup: learn the voice from the first sentences
+  }
+}
+// How far each cue has drifted from your own normal: 0 is none, .5 earns a nudge, 1 is a lot (before sensitivity).
+function faceDrive(v,F,x){
+  const soft=clamp(1-(v.smile-.35)*3); // a broad smile is not a scowl
+  x.scowl=clamp((v.brow-F.brow)*1.6+(v.frown-F.frown)*2,0,1.5)*soft;
+  x.tense=Math.max(0,(v.press-F.press)*1.8)*soft;
+  x.sneer=Math.max(0,(v.sneer-F.sneer)*2.5+Math.max(0,Math.abs(v.asym-F.asym)-.18)*2.5);
+  x.roll=Math.max(0,(v.up-Math.max(.45,F.up+.3))*3); // well above where your eyes normally sit for this camera angle
+}
+function voiceDrive(t,x){
+  const V=S.base.voice,talking=t-S.selfSeen<1500;
+  if(V&&talking){
+    if(S.lvl.length>=20){ // louder AND sharper reads as a raised voice; louder alone is often just leaning in
+      const dA=V.alpha!=null&&S.alphas.length>=8?clamp(med(S.alphas)-V.alpha,-3,8):0;
+      S.dL=topMean(S.lvl)-V.db;S.dA=dA;x.loud=(.5*S.dL+.8*dA-3.5)/5;
+    }
+    if(V.pitch&&S.f0s.length>=10){S.st=12*Math.log2(med(S.f0s)/V.pitch);x.pitch=(S.st-2.5)/4}
+    if(V.rate&&S.rate)x.fast=(S.rate/V.rate-1.15)/.3; // the pace estimate is rough, so this cue is deliberately slow to trigger
+  }
+  const el=(t-S.t0)/1000;let tk=0;for(let i=0;i<90;i++)tk+=S.talk[i];
+  S.share=el>5?clamp(tk/Math.min(90,el)):0; // share of the last 90 seconds you spent talking
+  if(el>45)x.hog=(S.share-.55)/.3;
+}
+// apply your personal allowance (learned from earlier sessions) and the sensitivity setting k
+function rawFrom(x,k){const raw={};for(const c in CUES)raw[c]=clamp(((x[c]||0)-S.off[c])*k);return raw}
+
+// ---- personal profile: a few dozen numbers learned across sessions. No audio, video or images. ----
+const FACE5=['brow','frown','press','sneer','asym'];
+const pct=(a,q)=>{const b=Array.from(a).sort((x,y)=>x-y);return b.length?b[Math.min(b.length-1,Math.floor(q*b.length))]:0};
+// blend today's setup with what earlier sessions learned about your resting face and usual voice
+function faceWith(F,P){
+  if(F&&P&&P.n&&P.face)for(const k of FACE5)if(P.face[k]!=null)F[k]=lerp(F[k],P.face[k],.3);
+  return F;
+}
+function voiceWith(V,P){
+  if(V&&P&&P.n&&P.voice){
+    if(P.voice.pitch&&V.pitch)V.pitch=Math.exp(lerp(Math.log(V.pitch),Math.log(P.voice.pitch),.5));
+    if(P.voice.rate)V.rate=lerp(V.rate,P.voice.rate,.5);
+  }
+  return V;
+}
+// your normal range: a cue that often runs a little high for you has to go a little higher to count (capped, so it never switches a cue off)
+function offsets(P){for(const c in CUES)S.off[c]=P&&P.n&&P.range&&P.range[c]!=null?clamp(P.range[c]-.25,0,.15):0}
+// called twice a second during a session: v is the face reading (or null), x the cue drives
+function sampleSession(v,x,talking){
+  const q=S.ses;
+  if(v){for(const k of FACE5)q[k].push(v[k]);for(const c of ['scowl','tense','sneer','roll'])q.x[c].push(Math.max(0,x[c]))}
+  if(talking&&S.base.voice){
+    if(S.f0s.length>=10)q.f0.push(med(S.f0s));
+    if(S.rate)q.rate.push(S.rate);
+    for(const c of ['loud','pitch','fast'])q.x[c].push(Math.max(0,x[c]));
+  }
+}
+// fold one finished session (at least a minute long) into the profile
+function learn(P,mins){
+  const q=S.ses,mix=(a,b)=>a==null?b:lerp(a,b,.25);
+  P=P&&P.v===1?P:{v:1,n:0,t:0,face:{},voice:{},range:{}};
+  if(!(mins>=1))return P;
+  let got=false;
+  if(q.brow.length>=60){for(const k of FACE5)P.face[k]=mix(P.face[k],med(q[k]));got=true}
+  if(q.f0.length>=20){P.voice.pitch=mix(P.voice.pitch,med(q.f0));got=true}
+  if(q.rate.length>=20)P.voice.rate=mix(P.voice.rate,med(q.rate));
+  for(const c in q.x)if(q.x[c].length>=40)P.range[c]=mix(P.range[c],pct(q.x[c],.9));
+  if(S.base&&S.base.mthrCal)P.mthr=mix(P.mthr,S.base.mthr);
+  if(got){P.n++;P.t=Date.now()}
+  return P;
+}
+// Advance every cue by one frame. Returns the cues that have just earned a nudge.
+function stepCues(dt,t,raw){
+  let mx=0,sum=0,top=null;const fired=[];
+  for(const c in CUES){
+    const Q=CUES[c],r=raw[c];
+    S.bad[c]=ema(S.bad[c],r,k1(dt,r>S.bad[c]?Q.tau:Q.tau*2.5));
+    const v=S.bad[c]*Q.w;sum+=v;if(v>mx){mx=v;top=c}
+    if(S.bad[c]>.5)S.hold[c]+=dt;else S.hold[c]=Math.max(0,S.hold[c]-dt*2);
+    if(S.bad[c]>.5&&S.hold[c]>=Q.hold&&t>S.cool[c]){S.counts[c]++;S.cool[c]=t+(Q.cool||9)*1000;S.hold[c]=0;fired.push(c)}
+  }
+  const target=clamp(mx*.7+sum*.15);
+  S.heat=ema(S.heat,target,k1(dt,target>S.heat?.2:1.2)); // quick to warm, slower to cool
+  S.score=100*(1-S.heat);S.top=mx>.12?top:null;S.topV=mx;
+  if(t-S.lastSample>500){S.scores.push(S.score);S.lastSample=t}
+  return fired;
+}
+/*CORE-END*/
+
+const $=id=>document.getElementById(id);
+const VIEWS=['gate','intro','calib','live','summary'];
+const show=v=>{VIEWS.forEach(x=>$(x).classList.toggle('on',x===v));scrollTo(0,0)};
+const SENS={low:.7,med:1,high:1.35};
+const sens=()=>SENS[document.querySelector('input[name=sens]:checked')?.value]||1;
+const MP='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3';
+const FACE_MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+const ORT='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/';
+const VAD_MODEL='https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.31/dist/silero_vad_v6.onnx';
+const video=$('vid'),ZOOM=1.3,ARC=351.9;
+let stream=null,ctx=null,tap=null,wake=null,running=false,busy=false,frame=0,lastT=0,lastVT=-1,lastDet=0,detErr=0,mkFace=null,demoT=0,bgNow='';
+
+// ---- the face: one drawing, many looks ----
+const INK='#1b2350',MOON=[255,217,120],MOONS='#ffd978',AWAY=[196,203,232];
+const X=o=>({...CALM,bl:0,...o});
+const EXPR={calm:CALM,happy:X({eo:0,mc:.95,bl:.9}),meh:X({mc:.05,mw:.8}),away:X({eo:0,ea:-1,mc:0,mw:.6}),
+  scowl:X({b:-1,bo:1,mc:-.8}),tense:X({b:-.35,bo:.9,mc:0,mz:1,mw:.9}),sneer:X({b:-.6,bo:1,ld:.5,mc:-.2,ma:.9}),
+  roll:X({lk:1,b:.25,bo:.8,by:.7,mc:-.3,mw:.7}),loud:X({b:-.8,bo:1,mo:1,mc:-.1,mw:1.05}),
+  pitch:X({b:.9,bo:1,by:.6,mo:.55,mw:.5}),fast:X({b:.5,bo:.8,mo:.3,mz:.7,mw:1.1}),hog:X({mo:.75,mc:.4,mw:1.15})};
+const hexRGB=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const rgbStr=c=>'rgb('+c.map(v=>Math.round(v)).join(',')+')';
+// b brow angle (-1 lowered, +1 raised inner ends), bo brow visibility, by brow lift, eo eye openness, ea closed-eye curve,
+// lk eyes looking up, ld eyelid, mc mouth curve (+ smile, - frown), mo mouth open, mw mouth width, mz wavy mouth, ma lopsided mouth, bl blush
+function faceSVG(p,fill){
+  const f=n=>n.toFixed(1),ST=`stroke="${INK}" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"`;
+  let s=`<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="${fill}"/>`;
+  if(p.bl>.02)s+=`<g fill="#ff7d6e" opacity="${(p.bl*.5).toFixed(2)}"><circle cx="25" cy="72" r="8"/><circle cx="95" cy="72" r="8"/></g>`;
+  const ey=54-p.by*1.5;
+  for(const x of [41,79]){
+    const g=x<60?1:-1;
+    if(p.lk>.02)s+=`<circle cx="${x}" cy="${f(ey)}" r="9" fill="#fff" opacity="${clamp(p.lk*1.4).toFixed(2)}"/>`;
+    if(p.eo>.02)s+=`<circle cx="${f(x+p.lk*1.6)}" cy="${f(ey-p.lk*3.6)}" r="${(5.6*p.eo*(1-p.lk*.25)).toFixed(2)}" fill="${INK}"/>`;
+    if(p.eo<.98)s+=`<path d="M${x-7.5} ${f(ey)}Q${x} ${f(ey-p.ea*8)} ${x+7.5} ${f(ey)}" fill="none" ${ST} opacity="${(1-p.eo).toFixed(2)}"/>`;
+    if(p.ld>.02){const h=p.ld*10;s+=`<rect x="${x-10}" y="${f(ey-10.5)}" width="20" height="${f(h)}" fill="${fill}"/><path d="M${x-8} ${f(ey-10.5+h)}h16" ${ST}/>`}
+    if(p.bo>.02){const sl=-p.b*4.4,yb=37-p.by*5;s+=`<path d="M${x-g*9} ${f(yb-sl)}L${x+g*8.5} ${f(yb+sl)}" ${ST} opacity="${p.bo.toFixed(2)}"/>`}
+  }
+  const N=16,w=17*p.mw,top=[],bot=[];
+  for(let i=0;i<=N;i++){
+    const u=i/N*2-1,q=1-u*u,x=60+u*w;
+    const y=83+p.mc*10*(q-.55)-p.ma*(u>0?6.5*u*u:-1.5*u*u)+p.mz*3*Math.sin(Math.PI*i/2);
+    top.push(f(x)+' '+f(y));bot.push(f(x)+' '+f(y+p.mo*16*Math.pow(q,.7)));
+  }
+  return s+`<path d="M${top.join('L')}L${bot.reverse().join('L')}Z" fill="${INK}" ${ST}/></svg>`;
+}
+
+// ---- the screen colour: navy when steady, through plum, to red ----
+const RAMP=[[21,36,101],[71,31,115],[114,21,109],[154,0,83],[185,0,28]];
+function setBg(h){
+  h=clamp(h)*(RAMP.length-1);const i=Math.min(RAMP.length-2,Math.floor(h)),a=RAMP[i],b=RAMP[i+1];
+  const c=rgbStr(a.map((v,k)=>lerp(v,b[k],h-i)));
+  if(c!==bgNow){bgNow=c;document.body.style.backgroundColor=c}
+}
+const theme=()=>{document.querySelector('meta[name=theme-color]').content=bgNow||'#152465'};
+
+// ---- loading the models ----
 async function loadFace(){
-  let m=null;
-  for(const u of [MP+'/vision_bundle.mjs',MP]){try{m=await import(u);break}catch(e){console.warn(e)}}
-  if(!m)return false;
+  if(face)return true;
   try{
+    let m=null;for(const u of [MP+'/vision_bundle.mjs',MP]){try{m=await import(u);break}catch(e){console.warn(e)}}
+    if(!m)return false;
     const fs=await m.FilesetResolver.forVisionTasks(MP+'/wasm');
-    const o=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:true});
-    try{face=await m.FaceLandmarker.createFromOptions(fs,o('GPU'))}catch(e){face=await m.FaceLandmarker.createFromOptions(fs,o('CPU'))}
+    mkFace=d=>m.FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:FACE_MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:true,outputFacialTransformationMatrixes:true});
+    try{face=await mkFace('GPU')}catch(e){face=await mkFace('CPU')}
     return true;
   }catch(e){console.warn(e);face=null;return false}
 }
-
-function resetState(){
-  Object.assign(S,{mode:'calib',noise:-55,db:-90,pitch:0,mouth:0,prevJaw:0,voiced:false,self:false,
-    env:-90,valley:-90,rising:false,lastPeak:0,peaks:[],hist:[],bs:{},faceSeen:-1e9,rate:0,share:0,voiceSecs:0,
-    cal:{db:[],pitch:[],mouth:[],brow:[],frown:[],press:[],sneer:[],peaks:0,selfSecs:0},
-    base:null,bad:{},hold:{},cool:{},counts:{},score:100,scores:[],lastSample:0,t0:0,alertUntil:0});
-  for(const k in CUES){S.bad[k]=0;S.hold[k]=0;S.cool[k]=0;S.counts[k]=0}
+async function loadVAD(){
+  if(vad)return;
+  try{
+    const ort=await import(ORT+'ort.wasm.bundle.min.mjs');
+    ort.env.wasm.wasmPaths=ORT;ort.env.wasm.numThreads=1;
+    const sess=await ort.InferenceSession.create(VAD_MODEL,{executionProviders:['wasm']}),T=ort.Tensor;
+    vad={T,sess,state:new T('float32',new Float32Array(256),[2,1,128]),sr:new T('int64',BigInt64Array.from([16000n]),[]),inp:new Float32Array(576)};
+  }catch(e){console.warn('Speech model unavailable, using loudness to detect speech instead.',e)}
 }
-
-function pitchOf(b,sr){
-  const n=b.length>>1,x=new Float32Array(n);
-  for(let i=0;i<n;i++)x[i]=(b[2*i]+b[2*i+1])*.5;
-  const r=sr/2,minL=Math.floor(r/400),maxL=Math.min(Math.floor(r/70),n>>1);
-  let e0=0;for(let i=0;i<n;i++)e0+=x[i]*x[i];
-  if(e0<1e-5)return 0;
-  let best=0,bl=0;
-  for(let L=minL;L<=maxL;L++){
-    let c=0;for(let i=0;i<n-L;i++)c+=x[i]*x[i+L];
-    const nc=c/(e0*(n-L)/n);
-    if(nc>best){best=nc;bl=L}
+// Audio worklet: resamples the microphone to 16 kHz and hands over 512-sample chunks, off the main thread
+const TAP=`class T extends AudioWorkletProcessor{
+constructor(){super();const r=this.r=sampleRate/16000,H=this.H=Math.ceil(8*Math.max(1,r)),fc=.92/Math.max(1,r);
+this.K=new Float32Array(2*H*64+1);
+for(let i=0;i<this.K.length;i++){const d=i/64-H,x=Math.PI*fc*d;this.K[i]=(d?Math.sin(x)/x:1)*fc*(.5+.5*Math.cos(Math.PI*d/H))}
+this.b=new Float32Array(8192);this.n=0;this.p=H;this.o=new Float32Array(512);this.i=0}
+process(inp){const c=inp[0]&&inp[0][0];if(!c)return true;
+const H=this.H,r=this.r,K=this.K,b=this.b;if(this.n+c.length>b.length){this.n=0;this.p=H}
+b.set(c,this.n);this.n+=c.length;
+while(this.p+H<this.n){const i0=Math.floor(this.p),f=this.p-i0;let s=0;
+for(let j=1-H;j<=H;j++)s+=b[i0+j]*K[Math.round((j-f+H)*64)];
+this.o[this.i++]=s;if(this.i===512){const m=this.o.slice();this.port.postMessage(m,[m.buffer]);this.i=0}
+this.p+=r}
+const keep=Math.floor(this.p)-H;if(keep>0){b.copyWithin(0,keep,this.n);this.n-=keep;this.p-=keep}
+return true}}
+registerProcessor('steady-tap',T);`;
+async function startAudio(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+  try{await ctx.resume()}catch(e){}
+  const url=URL.createObjectURL(new Blob([TAP],{type:'text/javascript'}));
+  try{await ctx.audioWorklet.addModule(url)}finally{URL.revokeObjectURL(url)}
+  const src=ctx.createMediaStreamSource(new MediaStream(stream.getAudioTracks()));
+  tap=new AudioWorkletNode(ctx,'steady-tap',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[1],channelCount:1,channelCountMode:'explicit'});
+  const mute=ctx.createGain();mute.gain.value=0;
+  src.connect(tap);tap.connect(mute);mute.connect(ctx.destination);
+  let chain=Promise.resolve(),pend=0;
+  tap.port.onmessage=e=>{if(!running||pend>12)return;pend++;chain=chain.then(()=>onAudio(e.data)).catch(err=>console.warn(err)).then(()=>{pend--})};
+}
+async function getMedia(){
+  const gum=c=>navigator.mediaDevices.getUserMedia(c);
+  // processing is off so loudness is measured as it really is
+  const audio={echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1};
+  const vid={facingMode:'user',width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}};
+  try{return await gum({video:vid,audio})}
+  catch(e){
+    if(e.name==='NotAllowedError'||e.name==='SecurityError')throw e;
+    try{return await gum({audio})}catch(_){}   // camera busy or missing: voice only
+    try{return await gum({video:vid})}catch(_){} // microphone busy or missing: face only
+    throw e;
   }
-  return best>.55&&bl?r/bl:0;
+}
+function mediaError(e){
+  const n=e&&e.name;
+  if(n==='NotAllowedError'||n==='SecurityError')return 'Camera and microphone are blocked. Allow both for this site in your browser settings, then try again.';
+  if(n==='NotFoundError'||n==='OverconstrainedError')return 'No camera or microphone was found on this device.';
+  if(n==='NotReadableError'||n==='AbortError')return 'Another app is using your camera and microphone. Close it there, or run Steady on a second device such as your phone.';
+  return 'The camera and microphone could not start. Check they are connected and allowed, then try again.';
 }
 
+// ---- reading the face ----
 const g=k=>S.bs[k]||0;
+const FK=['brow','frown','press','sneer','asym','up'];
+const faceVals=()=>({brow:(g('browDownLeft')+g('browDownRight'))/2,frown:(g('mouthFrownLeft')+g('mouthFrownRight'))/2,
+  press:(g('mouthPressLeft')+g('mouthPressRight'))/2,sneer:(g('noseSneerLeft')+g('noseSneerRight'))/2,
+  asym:g('mouthSmileLeft')-g('mouthSmileRight'),smile:(g('mouthSmileLeft')+g('mouthSmileRight'))/2,up:Math.min(g('eyeLookUpLeft'),g('eyeLookUpRight'))});
+function collectFace(C){const v=faceVals();for(const k of FK)C[k].push(v[k]);C.yaw.push(S.yaw);C.nod.push(S.nod)}
+function faceBase(C){if(C.brow.length<15)return null;const o={yaw:med(C.yaw),nod:med(C.nod)};for(const k of FK)o[k]=med(C[k]);return o}
+function onFace(r,t){
+  const c=r.faceBlendshapes&&r.faceBlendshapes[0];
+  if(!c||!c.categories)return false;
+  const o={};for(const k of c.categories)o[k.categoryName]=k.score;
+  const dtf=(t-S.faceT)/1000,p=S.prev;
+  if(p&&dtf>.01&&dtf<.3){ // how fast the mouth is moving, per second
+    const v=(Math.abs(o.jawOpen-p.jawOpen)+.5*(Math.abs(o.mouthPucker-p.mouthPucker)+Math.abs(o.mouthFunnel-p.mouthFunnel)+Math.abs(o.mouthClose-p.mouthClose)))/dtf;
+    S.mouth=ema(S.mouth,v,k1(dtf,.2));
+    if(S.mouth>(S.base?S.base.mthr:MTHR))S.mouthUntil=t+400;
+  }
+  S.prev=o;S.bs=o;S.faceT=t;S.faceSeen=t;S.lm=r.faceLandmarks&&r.faceLandmarks[0];
+  const m=r.facialTransformationMatrixes&&r.facialTransformationMatrixes[0];
+  if(m&&m.data){const d=m.data;S.yaw=Math.atan2(d[8],d[10])*57.3;S.nod=Math.asin(clamp(-d[9],-1,1))*57.3;S.pose=true}
+  return true;
+}
+// Is the face well placed inside the head outline? Sizes are shares of the camera frame.
+function guide(faceOk){
+  let hint='No face found yet. Face the camera with light on your face.',ok=false;
+  const L=S.lm,vw=video.videoWidth,vh=video.videoHeight;
+  if(faceOk&&L&&vw){
+    const aV=vw/vh,fw=(aV>.75?.75/aV:1)/ZOOM,fh=(aV>.75?1:aV/.75)/ZOOM;
+    const a=L[10],b=L[152],c=L[234],d=L[454];
+    const size=Math.hypot((b.x-a.x)*aV,b.y-a.y);
+    const cx=.5+((c.x+d.x)/2-.5)/fw,cy=.5+((a.y+b.y)/2-.5)/fh;
+    if(size<.16)hint='Move closer.';
+    else if(size>.5||Math.min(a.y,1-b.y,c.x,d.x,1-c.x,1-d.x)<.01)hint='Move back a little.';
+    else if(Math.abs(cx-.5)>.17||Math.abs(cy-.465)>.15)hint='Center your face in the outline.';
+    else if(S.pose&&(Math.abs(S.yaw)>24||Math.abs(S.nod)>32))hint='Face the camera straight on.';
+    else{ok=true;hint='Looks good. Hold still.'}
+  }
+  $('guide').classList.toggle('ok',ok);
+  return {ok,hint};
+}
 
-function loop(t){
+// ---- session flow ----
+const status=s=>{const e=$('cstat');if(e.textContent!==s)e.textContent=s};
+function camMode(m){const c=$('cam');c.hidden=m==='off';c.classList.toggle('big',m==='big')}
+async function start(){
+  if(!pkey||busy||running)return;busy=true;clearTimeout(demoT);endPreview();
+  resetState();
+  show('calib');$('cskip').hidden=true;$('ccount').className='count';$('guide').classList.remove('ok');
+  status('Asking for camera and microphone...');
+  try{stream=await getMedia()}catch(e){status(mediaError(e));busy=false;return}
+  const mine=stream;
+  hasVideo=stream.getVideoTracks().length>0;hasAudio=stream.getAudioTracks().length>0;
+  if(hasVideo){video.srcObject=stream;try{await video.play()}catch(e){}camMode('big')}
+  status('Loading the face and voice models. The first time takes a few seconds...');
+  if(hasAudio){try{await startAudio();loadVAD()}catch(e){console.warn(e);hasAudio=false}}
+  const ok=hasVideo?await loadFace():false;
+  if(stream!==mine)return; // cancelled while loading
+  try{wake=await navigator.wakeLock?.request('screen')}catch(e){wake=null}
+  S.note=!hasVideo?'No camera this session, so Steady is listening only. Wear headphones so it hears just you.'
+    :!ok?'The face model could not load, so Steady is listening only this session.'
+    :!hasAudio?'No microphone this session, so Steady is watching your face only.':'';
+  running=true;busy=false;lastT=0;lastVT=-1;lastDet=0;detErr=0;
+  const t=performance.now();
+  if(face&&hasVideo){S.mode='frame';S.frameT0=t;status('Line up your face inside the outline.')}else beginCal(t);
+  requestAnimationFrame(tick);
+}
+function beginCal(t){
+  S.mode='calib';S.calT0=t;$('cskip').hidden=true;
+  $('ccount').className='count on'+(hasVideo?'':' solo');
+  status(hasAudio?'Now read the words below out loud.':'Hold a relaxed, neutral face.');
+}
+function finishCal(t){
+  const C=S.cal,mS=med(C.mouthS),mI=med(C.mouthI),seen=C.mouthS.length>=20;
+  // only trust the setup voice if a mouth was seen moving while speech was heard (or there was no face to check)
+  const spoke=C.secs>=4&&(!seen||mS>Math.max(.15,2*mI));
+  const use=S.prof=$('rem').checked?profile:null,cal=spoke&&seen; // the saved profile, if you asked Steady to remember
+  S.base={voice:voiceWith(spoke?voiceBase(C):null,use),fb:faceWith(faceBase(C),use),mthrCal:cal,
+    mthr:cal?clamp(.4*mS,Math.max(.1,1.5*mI),.7):use&&use.mthr?use.mthr:clamp(3*Math.max(mI,seen?mS:0),.15,MTHR)};
+  offsets(use);
+  S.mode='live';S.t0=t;S.sec=-1;S.heat=0;S.score=100;S.lvl.length=S.f0s.length=S.alphas.length=0;
+  $('liveNote').textContent=S.note||(hasAudio&&!S.base.voice?'Steady will learn your normal voice from your first few sentences.':'Bars fill as a cue drifts from your normal.');
+  $('alert').classList.remove('hot');$('alert').textContent='Looking steady.';
+  camMode('mini');show('live');
+}
+
+function tick(t){
   if(!running)return;
   const dt=lastT?Math.min(.1,(t-lastT)/1000):1/60;lastT=t;frame++;
-  analyser.getFloatTimeDomainData(buf);
-  let s=0;for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];
-  const db=10*Math.log10(s/buf.length+1e-10);
-  S.db=ema(S.db,db,.3);
-  S.noise=db<S.noise?ema(S.noise,db,.05):ema(S.noise,db,.0008);
-  S.voiced=S.db>S.noise+10;
-  if(S.voiced&&frame%2===0){const p=pitchOf(buf,ctx.sampleRate);if(p)S.pitch=S.pitch?ema(S.pitch,p,.15):p}
-
   let fresh=false;
-  if(face&&video.readyState>=2&&video.currentTime!==lastVT){
-    lastVT=video.currentTime;
-    try{const r=face.detectForVideo(video,t);
-      if(r.faceBlendshapes&&r.faceBlendshapes.length){const o={};for(const c of r.faceBlendshapes[0].categories)o[c.categoryName]=c.score;S.bs=o;S.faceSeen=t;fresh=true}
-    }catch(e){}
+  if(face&&hasVideo&&video.readyState>=2&&video.currentTime!==lastVT&&t-lastDet>=45){
+    lastVT=video.currentTime;lastDet=t;
+    try{fresh=onFace(face.detectForVideo(video,t),t);detErr=0}
+    catch(e){if(++detErr===8&&mkFace){const mk=mkFace;mkFace=null;face=null;mk('CPU').then(f=>{face=f}).catch(()=>{})}}
   }
-  if(fresh){const j=g('jawOpen');S.mouth=ema(S.mouth,Math.abs(j-S.prevJaw),.2);S.prevJaw=j}
-  const faceOk=!!face&&t-S.faceSeen<1000;
-  const mthr=S.base?S.base.mthr:.006;
-  S.self=S.voiced&&(S.mode==='calib'||!faceOk||S.mouth>mthr);
-
-  // syllable-ish peaks from the loudness envelope, only while you speak
-  const env=S.db;
-  if(!S.self){S.valley=env;S.rising=false}
-  else if(env>S.env+.05){S.rising=true}
-  else if(env<S.env-.05){
-    if(S.rising){if(S.env-S.valley>3&&t-S.lastPeak>100){S.peaks.push(t);S.lastPeak=t;if(S.mode==='calib')S.cal.peaks++}S.rising=false;S.valley=env}
-    else S.valley=Math.min(S.valley,env);
-  }
-  S.env=env;
-
-  S.hist.push([t,S.voiced,S.self,dt]);
-  while(S.hist.length&&t-S.hist[0][0]>60000)S.hist.shift();
-  while(S.peaks.length&&t-S.peaks[0]>5000)S.peaks.shift();
-
-  if(S.mode==='calib'){
-    const C=S.cal;
-    if(S.voiced){C.db.push(S.db);if(S.pitch)C.pitch.push(S.pitch);if(faceOk)C.mouth.push(S.mouth);C.selfSecs+=dt}
-    if(fresh){C.brow.push((g('browDownLeft')+g('browDownRight'))/2);C.frown.push((g('mouthFrownLeft')+g('mouthFrownRight'))/2);C.press.push((g('mouthPressLeft')+g('mouthPressRight'))/2);C.sneer.push((g('noseSneerLeft')+g('noseSneerRight'))/2)}
-  }else if(S.mode==='live'){evaluate(dt,t,faceOk)}
-  requestAnimationFrame(loop);
+  const faceOk=!!face&&hasVideo&&t-S.faceSeen<1200;
+  if(S.mode==='frame'){
+    const q=guide(faceOk);status(q.hint);
+    if(q.ok){if(!S.alignT)S.alignT=t;if(t-S.alignT>900)beginCal(t)}else S.alignT=0;
+    if(S.mode==='frame'&&t-S.frameT0>7000)$('cskip').hidden=false;
+  }else if(S.mode==='calib'){
+    if(face&&hasVideo){const q=guide(faceOk);status(q.ok?(hasAudio?'Now read the words below out loud.':'Hold a relaxed, neutral face.'):'Keep your face inside the outline.');if(fresh)collectFace(S.cal)}
+    const left=15-(t-S.calT0)/1000;$('ccount').textContent=Math.max(1,Math.ceil(left));
+    if(left<=0)finishCal(t);
+  }else if(S.mode==='live')evaluate(dt,t,faceOk);
+  requestAnimationFrame(tick);
 }
 
 function evaluate(dt,t,faceOk){
-  const B=S.base,k=SENS[$('sens').value]||1,raw={};
-  if(faceOk){
-    const brow=(g('browDownLeft')+g('browDownRight'))/2,frown=(g('mouthFrownLeft')+g('mouthFrownRight'))/2;
-    const press=(g('mouthPressLeft')+g('mouthPressRight'))/2,sneer=(g('noseSneerLeft')+g('noseSneerRight'))/2;
-    const sl=g('mouthSmileLeft'),sr=g('mouthSmileRight');
-    raw.scowl=clamp(((brow-B.brow)*1.6+(frown-B.frown)*2)*k);
-    raw.tense=clamp((press-B.press)*1.8*k);
-    raw.sneer=clamp(((sneer-B.sneer)*2.5+Math.max(0,Math.abs(sl-sr)-.18)*2.5)*k);
-    raw.roll=clamp((Math.min(g('eyeLookUpLeft'),g('eyeLookUpRight'))-.45)*3*k);
-  }else raw.scowl=raw.tense=raw.sneer=raw.roll=0;
-  let selfRecent=0,voiceAll=0,self60=0;
-  for(const h of S.hist){if(h[1])voiceAll+=h[3];if(h[2]){self60+=h[3];if(t-h[0]<5000)selfRecent+=h[3]}}
-  S.voiceSecs=voiceAll;S.share=voiceAll>0?self60/voiceAll:0;
-  if(selfRecent>1.2)S.rate=S.peaks.length/selfRecent;
-  raw.loud=S.self?clamp((S.db-B.db-5)/10*k):0;
-  raw.pitch=S.self&&B.pitch&&S.pitch?clamp((S.pitch/B.pitch-1.15)/.3*k):0;
-  raw.fast=selfRecent>1.2&&B.rate?clamp((S.rate/B.rate-1.2)/.4*k):0;
-  raw.hog=voiceAll>20?clamp((S.share-.7)/.2):0;
-
-  let mx=0,sum=0,top=null;
-  for(const c in CUES){
-    const tau=c==='hog'?3:(S.self||c in{scowl:1,tense:1,sneer:1,roll:1})?.6:1.2;
-    S.bad[c]=ema(S.bad[c],raw[c],1-Math.exp(-dt/tau));
-    const v=S.bad[c]*CUES[c].w;sum+=v;if(v>mx){mx=v;top=c}
-    if(S.bad[c]>.5)S.hold[c]+=dt;else S.hold[c]=Math.max(0,S.hold[c]-dt*2);
-    if(S.hold[c]>1.2&&t>S.cool[c])fire(c,t);
-  }
-  const target=100*(1-clamp(mx*.7+sum*.15));
-  S.score=ema(S.score,target,1-Math.exp(-dt/1));
-  if(t-S.lastSample>500){S.scores.push(S.score);S.lastSample=t}
-  if(frame%4===0)render(t,faceOk);
+  const B=S.base,x={scowl:0,tense:0,sneer:0,roll:0,loud:0,pitch:0,fast:0,hog:0};
+  if(!B.fb&&faceOk){collectFace(S.learnF);if(S.learnF.brow.length>=90)B.fb=faceWith(faceBase(S.learnF),S.prof)}
+  const F=B.fb,turned=!!F&&S.pose&&(Math.abs(S.yaw-F.yaw)>32||Math.abs(S.nod-F.nod)>28),seeing=faceOk&&!!F&&!turned;
+  const v=seeing?faceVals():null;
+  if(v)faceDrive(v,F,x); // face cues are paused while your head is turned away
+  voiceDrive(t,x);
+  if(t-S.lastSample>500)sampleSession(v,x,t-S.selfSeen<1500);
+  for(const c of stepCues(dt,t,rawFrom(x,sens())))fire(c,t);
+  setBg(Math.pow(clamp((S.heat-.05)/.6),.85)); // one clear cue is already well on the way to red
+  drawLive(dt,faceOk);
+  if(frame%3===0)render(t,faceOk,seeing,turned);
 }
 
 function fire(c,t){
-  S.counts[c]++;S.cool[c]=t+9000;S.hold[c]=0;S.alertUntil=t+4000;
+  S.alertUntil=t+4000;
   const a=$('alert');a.textContent=CUES[c].msg;a.classList.add('hot');
   if($('vib').checked&&navigator.vibrate)navigator.vibrate([120,80,120]);
+  if($('chime').checked)chime();
   const d=$('dot');d.style.transform='scale(1.6)';setTimeout(()=>d.style.transform='',300);
 }
 
-const colorFor=s=>s>=75?'var(--calm)':s>=50?'var(--warn)':'var(--bad)';
-function bar(id,v){const e=$(id);e.style.width=(clamp(v)*100).toFixed(0)+'%';e.style.background=v>.66?'var(--bad)':v>.33?'var(--warn)':'var(--calm)'}
-function render(t,faceOk){
-  const sc=Math.round(S.score),col=colorFor(sc);
+// the on-screen face eases toward the look of whichever cue is strongest
+function drawLive(dt,faceOk){
+  const top=S.top,lost=!top&&!!face&&hasVideo&&!faceOk,tgt=top?EXPR[top]:lost?EXPR.away:CALM,a=top?clamp(S.topV*1.5):1,e=k1(dt,.12);
+  const fc=top?MOON.map((v,i)=>lerp(v,hexRGB(CUES[top].fill)[i],a)):lost?AWAY:MOON;
+  let sig='';
+  for(const key in CALM){S.fp[key]=ema(S.fp[key],lerp(CALM[key],tgt[key],a),e);sig+=S.fp[key].toFixed(2)}
+  for(let i=0;i<3;i++){S.ff[i]=ema(S.ff[i],fc[i],e);sig+=Math.round(S.ff[i])}
+  if(sig!==S.sig){S.sig=sig;$('liveFace').innerHTML=faceSVG(S.fp,rgbStr(S.ff))}
+}
+function bar(id,v){const e=$(id);e.style.width=(clamp(v)*100).toFixed(0)+'%';e.style.background=v>.66?'var(--coral)':v>.33?'var(--moon)':'var(--mint)'}
+function render(t,faceOk,seeing,turned){
+  const sc=Math.round(S.score),col=sc>=75?'var(--mint)':sc>=50?'var(--moon)':'var(--coral)';
   $('score').textContent=sc;$('slabel').textContent=sc>=75?'Steady':sc>=50?'Watch it':'Reset';
-  const arc=$('arc');arc.style.strokeDashoffset=(326.7*(1-sc/100)).toFixed(1);arc.style.stroke=col;
+  $('arc').style.strokeDashoffset=(ARC*(1-sc/100)).toFixed(1);
   const d=$('dot');d.style.background=col;d.style.boxShadow='0 0 28px '+col;
-  const B=S.base,fb=Math.max(S.bad.scowl,S.bad.tense,S.bad.sneer,S.bad.roll);
-  bar('bFace',fb);$('vFace').textContent=!face?'off':faceOk?(fb>.5?'tense':'ok'):'no face';
-  bar('bLoud',S.bad.loud);$('vLoud').textContent=(S.self?Math.round(S.db-B.db):0)+' dB';
-  bar('bPitch',S.bad.pitch);$('vPitch').textContent=(S.self&&B.pitch&&S.pitch?Math.round((S.pitch/B.pitch-1)*100):0)+'%';
-  bar('bFast',S.bad.fast);$('vFast').textContent=(B.rate&&S.rate?(S.rate/B.rate).toFixed(1):'1.0')+'x';
-  bar('bHog',S.bad.hog);$('vHog').textContent=Math.round(S.share*100)+'%';
+  const V=S.base.voice,talking=t-S.selfSeen<1500,fb=Math.max(S.bad.scowl,S.bad.tense,S.bad.sneer,S.bad.roll),off=!hasAudio?'off':!V?'learning':'';
+  bar('bFace',fb);$('vFace').textContent=!face||!hasVideo?'off':!faceOk?'no face':turned?'turned':!seeing?'learning':fb>.5?'tense':'ok';
+  const dl=talking?Math.round(S.dL):0;
+  bar('bLoud',S.bad.loud);$('vLoud').textContent=off||(dl>0?'+':'')+dl+' dB';
+  bar('bPitch',S.bad.pitch);$('vPitch').textContent=off||(talking&&V.pitch?Math.round((2**(S.st/12)-1)*100):0)+'%';
+  bar('bFast',S.bad.fast);$('vFast').textContent=off||(talking&&V.rate&&S.rate?(S.rate/V.rate).toFixed(1):'1.0')+'x';
+  bar('bHog',S.bad.hog);$('vHog').textContent=!hasAudio?'off':Math.round(S.share*100)+'%';
   const a=$('alert');
   if(t>S.alertUntil){
     a.classList.remove('hot');
-    a.textContent=face&&!faceOk?'Can\'t see your face. Adjust the phone or the light.':sc>=75?'Looking steady.':'Ease off a little. Breathe out slowly.';
+    const msg=face&&hasVideo&&!faceOk?'Can\'t see your face. Turn back toward the camera.':sc>=75?'Looking steady.':'Ease off a little. Breathe out slowly.';
+    if(a.textContent!==msg)a.textContent=msg;
   }
-}
-
-async function start(){
-  show('calib');$('cback').hidden=true;$('ccount').textContent='15';
-  $('cstat').textContent='Asking for camera and microphone...';
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:480},height:{ideal:640}},audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
-  }catch(e){$('cstat').textContent='Camera or microphone was blocked. Allow both for this site in Chrome settings, then try again.';$('cback').hidden=false;return}
-  video.srcObject=stream;try{await video.play()}catch(e){}
-  $('cam').hidden=false;
-  ctx=new (window.AudioContext||window.webkitAudioContext)();try{await ctx.resume()}catch(e){}
-  const src=ctx.createMediaStreamSource(stream);analyser=ctx.createAnalyser();analyser.fftSize=2048;src.connect(analyser);buf=new Float32Array(analyser.fftSize);
-  $('cstat').textContent='Loading the face model. The first time takes a few seconds...';
-  const ok=await loadFace();
-  try{wake=await navigator.wakeLock?.request('screen')}catch(e){wake=null}
-  resetState();running=true;lastT=0;requestAnimationFrame(loop);
-  $('cstat').textContent=ok?'Listening and watching. Start reading.':'Face model could not load, so this session is voice only. Start reading.';
-  $('liveNote').textContent=ok?'Bars fill as a cue drifts from your baseline.':'Voice only this session: the face model did not load.';
-  for(let i=15;i>0;i--){if(!running)return;$('ccount').textContent=i;await sleep(1000)}
-  finishCal();
-}
-
-function finishCal(){
-  const C=S.cal,heard=C.db.length>45;
-  S.base={db:heard?med(C.db):S.noise+18,pitch:heard?med(C.pitch):0,rate:C.selfSecs>2?Math.max(2,C.peaks/C.selfSecs):0,
-    mthr:C.mouth.length>20?Math.max(.003,med(C.mouth)*.45):.006,
-    brow:med(C.brow),frown:med(C.frown),press:med(C.press),sneer:med(C.sneer)};
-  if(!heard)$('liveNote').textContent='I did not hear much during calibration, so voice cues are rough this session.';
-  S.mode='live';S.t0=performance.now();S.score=100;show('live');
+  if(t-S.themeT>500){S.themeT=t;theme()}
 }
 
 function end(){
-  if(!running&&!stream)return show('intro');
-  running=false;
-  stream?.getTracks().forEach(x=>x.stop());stream=null;
-  try{ctx?.close()}catch(e){}
-  try{wake?.release()}catch(e){}
-  $('cam').hidden=true;$('discreet').classList.remove('on');
-  if(S.mode!=='live'){show('intro');return}
+  const was=S.mode;
+  running=false;busy=false;
+  stream?.getTracks().forEach(x=>x.stop());stream=null;video.srcObject=null;
+  try{ctx?.close()}catch(e){}ctx=null;tap=null;
+  try{wake?.release()}catch(e){}wake=null;
+  if(vad){vad.state=new vad.T('float32',new Float32Array(256),[2,1,128]);vad.inp.fill(0)}
+  camMode('off');$('discreet').classList.remove('on');setBg(0);theme();
+  if(was!=='live'){S.mode='idle';show('intro');return}
   const mins=(performance.now()-S.t0)/60000,avg=S.scores.length?Math.round(S.scores.reduce((a,b)=>a+b,0)/S.scores.length):100;
   const total=Object.values(S.counts).reduce((a,b)=>a+b,0);
-  $('sumLine').textContent=`Average score ${avg} over ${mins<1?Math.max(1,Math.round(mins*60))+' seconds':mins.toFixed(1)+' minutes'}, with ${total} warning${total===1?'':'s'}.`;
-  const rows=Object.keys(CUES).filter(c=>S.counts[c]).sort((a,b)=>S.counts[b]-S.counts[a]);
+  $('sumLine').textContent=`Average score ${avg} over ${mins<1?Math.max(1,Math.round(mins*60))+' seconds':mins.toFixed(1)+' minutes'}, with ${total} nudge${total===1?'':'s'}.`;
+  const rows=Object.keys(CUES).filter(c=>S.counts[c]).sort((a,b)=>S.counts[b]-S.counts[a]),top=rows[0];
   $('sumTable').innerHTML=rows.length?rows.map(c=>`<tr><td>${CUES[c].label}</td><td>${S.counts[c]}</td></tr>`).join(''):'<tr><td>None. Nicely done.</td><td></td></tr>';
+  $('sumFace').innerHTML=avg>=85?faceSVG(EXPR.happy,MOONS):avg>=70||!top?faceSVG(CALM,MOONS):avg>=50?faceSVG(EXPR.meh,'#cfd6f6'):faceSVG(EXPR[top],CUES[top].fill);
   try{
     const h=JSON.parse(localStorage.getItem('steady.history')||'[]');
-    h.unshift({d:new Date().toLocaleDateString(),m:+mins.toFixed(1),a:avg,top:rows[0]?CUES[rows[0]].label:'None'});
+    h.unshift({d:new Date().toLocaleDateString(),m:+mins.toFixed(1),a:avg,top:top?CUES[top].label:'None'});
     localStorage.setItem('steady.history',JSON.stringify(h.slice(0,10)));
   }catch(e){}
+  S.mins=mins;
+  if($('rem').checked){profile=learn(profile,mins);saveProfile();remNote()}
+  $('remDone').hidden=true;$('remAsk').hidden=$('rem').checked||asked;
   S.mode='done';show('summary');
+}
+
+// a soft two-note chime, made in the browser (no sound file)
+let actx=null;
+function chime(){
+  try{
+    const a=ctx&&ctx.state==='running'?ctx:(actx||(actx=new (window.AudioContext||window.webkitAudioContext)()));
+    if(a.state==='suspended')a.resume();
+    const t0=a.currentTime+.03;
+    for(const [f,d] of [[784,0],[587.3,.17]]){
+      const o=a.createOscillator(),o2=a.createOscillator(),g=a.createGain(),g2=a.createGain();
+      o.frequency.value=f;o2.frequency.value=f*2;g2.gain.value=.22;
+      g.gain.setValueAtTime(.0001,t0+d);g.gain.exponentialRampToValueAtTime(.16,t0+d+.02);g.gain.exponentialRampToValueAtTime(.0001,t0+d+.7);
+      o.connect(g);o2.connect(g2);g2.connect(g);g.connect(a.destination);
+      o.start(t0+d);o2.start(t0+d);o.stop(t0+d+.75);o2.stop(t0+d+.75);
+    }
+    S.mute=performance.now()+950; // do not let the microphone count the chime as your voice
+  }catch(e){}
 }
 
 function renderHist(){
   try{
     const h=JSON.parse(localStorage.getItem('steady.history')||'[]');
-    if(!h.length)return;
+    if(!Array.isArray(h)||!h.length)return;
+    const tb=$('hist');tb.textContent='';
+    for(const x of h.slice(0,10)){
+      const tr=tb.insertRow();
+      tr.insertCell().textContent=`${x.d}, ${x.m} min. Top cue: ${x.top}`;
+      tr.insertCell().textContent=x.a;
+    }
     $('histCard').hidden=false;
-    $('hist').innerHTML=h.map(x=>`<tr><td>${x.d}, ${x.m} min. Top cue: ${x.top}</td><td>${x.a}</td></tr>`).join('');
   }catch(e){}
 }
 
-$('go').onclick=start;
-$('stop').onclick=end;
-$('cback').onclick=()=>{end();show('intro')};
-$('again').onclick=()=>{renderHist();show('intro')};
-$('disc').onclick=()=>{$('discreet').classList.add('on');document.documentElement.requestFullscreen?.().catch(()=>{})};
-$('discreet').onclick=()=>{$('discreet').classList.remove('on');if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})};
-document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible'&&running){try{wake=await navigator.wakeLock?.request('screen')}catch(e){}}});
-renderHist();
+// ---- intro: tap a face to see and feel its nudge ----
+function endPreview(){
+  document.querySelectorAll('.cue.on').forEach(b=>b.classList.remove('on'));
+  $('heroFace').innerHTML=faceSVG(CALM,MOONS);setBg(0);theme();
+  $('demo').classList.remove('hot');$('demo').textContent='Tap a face to preview its nudge.';
+}
+function preview(btn){
+  const c=btn.dataset.c;clearTimeout(demoT);
+  document.querySelectorAll('.cue.on').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  $('heroFace').innerHTML=faceSVG(EXPR[c],CUES[c].fill);setBg(.8);theme();
+  $('demo').classList.add('hot');$('demo').textContent=CUES[c].msg;
+  if($('vib').checked&&navigator.vibrate)navigator.vibrate([120,80,120]);
+  if($('chime').checked)chime();
+  demoT=setTimeout(endPreview,2800);
+}
+
+resetState();
+
+// ---- small things kept in this browser: settings, sign-in, saved profile ----
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+let pkey=null,profile=null,asked=false,booted=false,lockT=0,mem={n:0,until:0};
+function saveSet(){store.set('steady.settings',{sens:document.querySelector('input[name=sens]:checked')?.value||'med',vib:$('vib').checked,chime:$('chime').checked,rem:$('rem').checked,asked})}
+function loadSet(){
+  const q=store.get('steady.settings',{})||{};
+  if(SENS[q.sens])document.querySelector(`input[name=sens][value=${q.sens}]`).checked=true;
+  if('vib' in q)$('vib').checked=!!q.vib;
+  $('chime').checked=!!q.chime;$('rem').checked=!!q.rem;asked=!!q.asked;
+}
+function remNote(){
+  const on=$('rem').checked,n=profile&&profile.n;
+  $('remNote').textContent=!on?'Off. Nothing about your face or voice is kept between sessions.'
+    :n?`Learned from ${n} session${n===1?'':'s'}. Saved on this device only. Turn off to delete it.`
+    :'On. Steady starts learning from your next session of a minute or more. Turn off to delete it.';
+}
+
+// ---- sign-in. The check runs in this browser, so it is a basic lock: it keeps casual visitors out, nothing more. ----
+// Only a slow, salted one-way check value is stored here, never the email or password.
+const AUTH={salt:'fc62e5d8134c1c7931510f552f3814bb',iter:3000000,check:'ffcbcb042aeac8207564a8cff7cacb5d315fe998c07bbb1e4c4fc798a80603e3'};
+const enc=new TextEncoder(),hex=b=>Array.from(new Uint8Array(b),v=>v.toString(16).padStart(2,'0')).join(''),unhex=h=>Uint8Array.from(h.match(/../g)||[],v=>parseInt(v,16));
+const join=(a,b)=>{const o=new Uint8Array(a.length+b.length);o.set(a);o.set(b,a.length);return o};
+const sha=async(label,bytes)=>new Uint8Array(await crypto.subtle.digest('SHA-256',join(enc.encode(label),bytes)));
+async function derive(email,pass){
+  const k=await crypto.subtle.importKey('raw',enc.encode(pass),'PBKDF2',false,['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:join(unhex(AUTH.salt),enc.encode(email.trim().toLowerCase())),iterations:AUTH.iter},k,256));
+}
+async function unlock(master){
+  if(hex(await sha('steady-check',master))!==AUTH.check)return false;
+  pkey=await crypto.subtle.importKey('raw',await sha('steady-profile',master),'AES-GCM',false,['encrypt','decrypt']);
+  await loadProfile();
+  return true;
+}
+// the saved profile is encrypted with a key that only a correct sign-in can rebuild
+async function loadProfile(){
+  profile=null;
+  try{
+    const j=store.get('steady.profile',null);if(!j||!pkey)return;
+    profile=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:unhex(j.iv)},pkey,unhex(j.ct))));
+  }catch(e){profile=null}
+}
+async function saveProfile(){
+  try{
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    store.set('steady.profile',{iv:hex(iv),ct:hex(await crypto.subtle.encrypt({name:'AES-GCM',iv},pkey,enc.encode(JSON.stringify(profile))))});
+  }catch(e){}
+}
+// wrong tries slow down: a short pause each time, then a lockout that doubles from 30 seconds up to 15 minutes
+const tries=()=>{const t=store.get('steady.tries',mem)||mem;return t.n>=mem.n?t:mem};
+function failed(){const t=tries();t.n++;t.until=Date.now()+(t.n<5?2000:Math.min(9e5,3e4*2**(t.n-5)));mem={n:t.n,until:t.until};store.set('steady.tries',mem)}
+function gateTick(){
+  clearTimeout(lockT);
+  const left=Math.ceil((tries().until-Date.now())/1000);
+  $('uGo').disabled=left>0;
+  $('uWait').textContent=left>2?`${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`:'';
+  if(left>0)lockT=setTimeout(gateTick,500);
+  else if($('uMsg').textContent.startsWith('Too many'))$('uMsg').textContent='';
+}
+async function signIn(e){
+  e.preventDefault();
+  if($('uGo').disabled||Date.now()<tries().until)return;
+  const email=$('uEmail').value,pass=$('uPass').value,msg=$('uMsg');
+  if(!email.trim()||!pass){msg.textContent='Enter your email and password.';return}
+  if(!(window.crypto&&crypto.subtle)){msg.textContent='Sign-in needs a secure (https) page.';return}
+  $('uGo').disabled=true;msg.textContent='Checking...';
+  let m=null,ok=false;
+  try{m=await derive(email,pass);ok=await unlock(m)}catch(err){console.warn(err)}
+  if(!ok){
+    failed();$('uPass').value='';
+    msg.textContent=tries().n>=5?'Too many tries. Sign-in is paused for a while.':'That email and password do not match.';
+    gateTick();$('uPass').focus();return;
+  }
+  mem={n:0,until:0};store.del('steady.tries');
+  const tok=hex(m);
+  try{sessionStorage.setItem('steady.auth',tok)}catch(err){}
+  if($('uKeep').checked)store.set('steady.auth',tok);else store.del('steady.auth');
+  $('uPass').value='';msg.textContent='';$('uGo').disabled=false;
+  enter();
+}
+function signOut(){
+  if(running||busy)end();
+  try{sessionStorage.removeItem('steady.auth')}catch(e){}
+  store.del('steady.auth');pkey=null;profile=null;
+  show('gate');gateTick();$('uEmail').focus();
+}
+function enter(){boot();loadSet();remNote();renderHist();show('intro')}
+
+function boot(){
+  if(booted)return;booted=true;
+  $('heroFace').innerHTML=faceSVG(CALM,MOONS);
+  $('cues').innerHTML=Object.keys(CUES).map(c=>`<button class="cue" data-c="${c}"><span class="face">${faceSVG(EXPR[c],CUES[c].fill)}</span>${CUES[c].short}</button>`).join('');
+  $('cues').onclick=e=>{const b=e.target.closest('.cue');if(b)preview(b)};
+  $('go').onclick=start;
+  $('stop').onclick=end;
+  $('cback').onclick=end;
+  $('cskip').onclick=()=>{if(S.mode==='frame')beginCal(performance.now())};
+  $('again').onclick=()=>{renderHist();show('intro')};
+  const discreet=on=>{
+    $('discreet').classList.toggle('on',on);
+    if(on){$('discreet').focus();document.documentElement.requestFullscreen?.().catch(()=>{})}
+    else{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});$('disc').focus()}
+  };
+  $('disc').onclick=()=>discreet(true);
+  $('discreet').onclick=()=>discreet(false);
+  $('discreet').onkeydown=e=>{if(e.key==='Escape'||e.key==='Enter'||e.key===' '){e.preventDefault();discreet(false)}};
+  document.addEventListener('visibilitychange',async()=>{
+    if(!running)return;
+    if(document.visibilityState==='hidden'){S.hiddenAt=performance.now();return}
+    try{wake=await navigator.wakeLock?.request('screen')}catch(e){}
+    const gone=S.hiddenAt?Math.round((performance.now()-S.hiddenAt)/1000):0;S.hiddenAt=0;lastT=0;
+    if(S.mode==='live'&&gone>=3)$('liveNote').textContent=`Steady paused for ${gone} seconds while this window was hidden. Keep it in view during your meeting.`;
+  });
+  $('out').onclick=signOut;
+  document.querySelectorAll('input[name=sens]').forEach(r=>{r.onchange=saveSet});
+  $('vib').onchange=saveSet;
+  $('chime').onchange=()=>{saveSet();if($('chime').checked)chime()};
+  $('rem').onchange=()=>{if(!$('rem').checked){profile=null;store.del('steady.profile')}saveSet();remNote()};
+  $('remYes').onclick=()=>{$('rem').checked=true;asked=true;saveSet();profile=learn(profile,S.mins);saveProfile();remNote();$('remAsk').hidden=true;$('remDone').hidden=false};
+  $('remNo').onclick=()=>{asked=true;saveSet();$('remAsk').hidden=true};
+}
+$('gateFace').innerHTML=faceSVG(CALM,MOONS);
+$('gform').onsubmit=signIn;
+(async()=>{
+  let tok=null;
+  try{tok=sessionStorage.getItem('steady.auth')}catch(e){}
+  tok=tok||store.get('steady.auth',null);
+  if(typeof tok==='string'&&/^[0-9a-f]{64}$/.test(tok)&&window.crypto&&crypto.subtle){
+    try{if(await unlock(unhex(tok))){enter();return}}catch(e){}
+  }
+  gateTick();
+})();
 }
 </script>
 </body></html>
