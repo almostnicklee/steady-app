@@ -14,7 +14,11 @@ The site is hosted free on GitHub Pages and updates automatically a minute or tw
 - **Personal setup (one time, about a minute):** guided steps on camera and microphone (resting face, listening, normal read, lively story, rushed read, smile, frown, pressed lips). Steady saves your resting face as your neutral and sets each nudge from your own range, so a resting face with pressed lips, or a naturally smiley one, is not flagged. After setup, sessions start with a quick 6 second check.
 - **During the meeting:** a friendly face mirrors the strongest cue with a plain label (for example "Scowling: may read as frustrated"), the background shifts from navy through plum to red, and a short nudge appears (with a vibration on phones that support it).
 - **Cues:** scowl, tight lips, smirk, eye roll, raised voice, rising pitch, rushing, and holding the floor too long. Every cue is measured against your own normal from setup.
-- **Nudge options:** vibration (phones that support it) and an optional soft chime. The chime is best with headphones, so others do not hear it.
+- **Nudge options:** vibration and an optional chime, plus a **Test nudge** button during a session to check both.
+  - Android phones vibrate. Laptops cannot.
+  - iPhone does not let websites vibrate. Steady tries a light tap through a Safari switch-control trick, which may not work on every iOS version.
+  - On iPhone, while the microphone is on, iOS plays web sounds quietly through the earpiece, so use headphones to hear the chime.
+- **Recent sessions** can be deleted one at a time, or all at once.
 - **Remember my normal (optional):** Steady can keep a small profile on your device so it learns your usual baselines and normal range across sessions. It is a few dozen numbers (resting brow reading, usual pitch and pace, typical range per cue), with no audio, video or images. It is encrypted with your sign-in, never leaves the device, and turning the switch off deletes it.
 - **Privacy:** nothing is recorded or uploaded. Session scores, settings, and the optional profile are stored only in the browser on your device.
 

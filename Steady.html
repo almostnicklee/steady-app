@@ -115,6 +115,7 @@ tr:last-child td{border-bottom:0}
 .fld input{display:block;width:100%;margin-top:6px;min-height:54px;padding:0 18px;border-radius:18px;border:2px solid rgba(255,255,255,.55);background:var(--deep);color:#fff;font:inherit;font-weight:700}
 .link{min-height:44px;padding:0 4px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 button:disabled{opacity:.55;cursor:default}
+.del{min-height:44px;min-width:44px;padding:0 8px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 
 #discreet{position:fixed;inset:0;background:#000;display:none;place-items:center;z-index:20}
 #discreet.on{display:grid}
@@ -182,15 +183,18 @@ button:disabled{opacity:.55;cursor:default}
         <label><input type="radio" name="sens" value="high"><span>High</span></label>
       </div>
     </div>
-    <label class="set">Vibrate on nudges <input type="checkbox" class="sw" id="vib" role="switch" checked></label>
-    <label class="set">Chime on nudges <input type="checkbox" class="sw" id="chime" role="switch"></label>
+    <label class="set">Vibrate on nudges <input type="checkbox" class="sw" id="vib" role="switch" checked aria-describedby="vibNote"></label>
+    <p class="note" id="vibNote" style="margin:0 0 6px" hidden></p>
+    <label class="set">Chime on nudges <input type="checkbox" class="sw" id="chime" role="switch" aria-describedby="chimeNote"></label>
+    <p class="note" id="chimeNote" style="margin:0 0 6px" hidden></p>
     <label class="set">Remember my normal <input type="checkbox" class="sw" id="rem" role="switch" aria-describedby="remNote"></label>
     <p class="note" id="remNote" style="margin:0 0 6px"></p>
   </div>
 
   <h2>Private by design</h2>
   <p class="note">Everything is analyzed on this device, in memory. No video or audio is recorded, saved, or uploaded. The mic will hear other people, but voice cues only count while your own mouth is moving, and nothing anyone says is transcribed or kept. Your session scores and settings are saved on this device. If you turn on Remember my normal, a small profile is saved here too: numbers such as your resting brow reading, your usual pitch and pace, and your normal range for each cue. It holds no audio, video or images, it is encrypted with your sign-in, and turning the switch off deletes it. The app's code and models download from public libraries (jsDelivr and Google); they receive an ordinary web request, never your camera or microphone. The page is locked so it cannot connect anywhere else, which also stops the face library's built-in usage reports.</p>
-  <div id="histCard" hidden><h2>Recent sessions</h2><table id="hist"></table></div>
+  <div id="histCard" hidden><h2>Recent sessions</h2><table id="hist"></table>
+    <p style="margin:8px 0 0"><button class="link" id="histAll" type="button">Delete all sessions</button> <span class="note" id="histMsg" role="status" aria-live="polite"></span></p></div>
   <p style="margin:18px 0 0"><button class="link" id="out" type="button">Sign out</button></p>
   <p class="note" style="margin-top:14px">Steady is a self-coaching aid for your own use. It reads visible expressions and voice level, not feelings, and its cues are estimates that will sometimes be wrong. It is not a medical or diagnostic tool, and it is not for monitoring or evaluating other people.</p>
 </section>
@@ -224,6 +228,7 @@ button:disabled{opacity:.55;cursor:default}
     <p class="note" id="liveNote">Bars fill as a cue drifts from your normal.</p>
   </div>
   <div class="row"><button class="ghost" id="disc">Discreet mode</button><button class="ghost" id="stop">End session</button></div>
+  <p style="margin:12px 0 0;text-align:center"><button class="link" id="testNudge" type="button">Test nudge</button></p>
 </section>
 
 <section id="summary" class="view">
@@ -832,7 +837,7 @@ function evaluate(dt,t,faceOk){
 function fire(c,t){
   S.alertUntil=t+4000;
   const a=$('alert');a.textContent=CUES[c].msg;a.classList.add('hot');
-  if($('vib').checked&&navigator.vibrate)navigator.vibrate([120,80,120]);
+  buzz();
   if($('chime').checked)chime();
   const d=$('dot');d.style.transform='scale(1.6)';setTimeout(()=>d.style.transform='',300);
 }
@@ -903,7 +908,25 @@ function end(){
   S.mode='done';show('summary');
 }
 
-// a soft two-note chime, made in the browser (no sound file)
+// iPhone and iPad do not let websites vibrate. Safari on iOS 17.4+ gives a light tap when a switch control is toggled,
+// so Steady toggles a hidden one. This is a best effort: iOS may only allow it right after you touch the screen.
+const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const CAN_VIBRATE=typeof navigator.vibrate==='function';
+function buzz(){
+  if(!$('vib').checked)return;
+  try{
+    if(CAN_VIBRATE){navigator.vibrate([200,100,200]);return}
+    if(IOS){const l=document.createElement('label'),i=document.createElement('input');i.type='checkbox';i.setAttribute('switch','');l.setAttribute('aria-hidden','true');l.style.cssText='position:fixed;opacity:0;pointer-events:none;width:1px;height:1px';l.append(i);document.body.append(l);l.click();setTimeout(()=>l.click(),180);setTimeout(()=>l.remove(),400)}
+  }catch(e){}
+}
+function alertNotes(){
+  const v=$('vibNote'),c=$('chimeNote');
+  v.hidden=CAN_VIBRATE;
+  v.textContent=IOS?'iPhone does not let websites vibrate. Steady tries a light tap instead, which may not work on every iOS version.':'This browser cannot vibrate (laptops and some browsers do not support it). Use the chime or watch the screen color.';
+  c.hidden=!IOS;
+  c.textContent='On iPhone, sound plays quietly through the earpiece while the microphone is on. Wear headphones to hear the chime.';
+}
+// a two-note chime, made in the browser (no sound file)
 let actx=null;
 function chime(){
   try{
@@ -913,7 +936,7 @@ function chime(){
     for(const [f,d] of [[784,0],[587.3,.17]]){
       const o=a.createOscillator(),o2=a.createOscillator(),g=a.createGain(),g2=a.createGain();
       o.frequency.value=f;o2.frequency.value=f*2;g2.gain.value=.22;
-      g.gain.setValueAtTime(.0001,t0+d);g.gain.exponentialRampToValueAtTime(.16,t0+d+.02);g.gain.exponentialRampToValueAtTime(.0001,t0+d+.7);
+      g.gain.setValueAtTime(.0001,t0+d);g.gain.exponentialRampToValueAtTime(.45,t0+d+.02);g.gain.exponentialRampToValueAtTime(.0001,t0+d+.7);
       o.connect(g);o2.connect(g2);g2.connect(g);g.connect(a.destination);
       o.start(t0+d);o2.start(t0+d);o.stop(t0+d+.75);o2.stop(t0+d+.75);
     }
@@ -921,18 +944,26 @@ function chime(){
   }catch(e){}
 }
 
+const getHist=()=>{const h=store.get('steady.history',[]);return Array.isArray(h)?h.slice(0,10):[]};
 function renderHist(){
-  try{
-    const h=JSON.parse(localStorage.getItem('steady.history')||'[]');
-    if(!Array.isArray(h)||!h.length)return;
-    const tb=$('hist');tb.textContent='';
-    for(const x of h.slice(0,10)){
-      const tr=tb.insertRow();
-      tr.insertCell().textContent=`${x.d}, ${x.m} min. Top cue: ${x.top}`;
-      tr.insertCell().textContent=x.a;
-    }
-    $('histCard').hidden=false;
-  }catch(e){}
+  const h=getHist(),tb=$('hist');
+  tb.textContent='';$('histCard').hidden=!h.length;
+  h.forEach((x,i)=>{
+    const tr=tb.insertRow();
+    tr.insertCell().textContent=`${x.d}, ${x.m} min. Top cue: ${x.top}`;
+    tr.insertCell().textContent=x.a;
+    const b=document.createElement('button');b.type='button';b.className='del';b.textContent='Delete';
+    b.setAttribute('aria-label',`Delete session from ${x.d}, ${x.m} minutes`);
+    b.onclick=()=>{const all=getHist();all.splice(i,1);store.set('steady.history',all);renderHist();
+      $('histMsg').textContent='Session deleted.';const n=$('hist').querySelector('.del')||$('psGo');n.focus()};
+    tr.insertCell().append(b);
+  });
+  $('histAll').textContent='Delete all sessions';delete $('histAll').dataset.sure;
+}
+function delAll(){
+  const b=$('histAll');
+  if(!b.dataset.sure){b.dataset.sure='1';b.textContent='Tap again to delete all sessions';setTimeout(()=>{if(b.dataset.sure){delete b.dataset.sure;b.textContent='Delete all sessions'}},5000);return}
+  store.del('steady.history');renderHist();$('histMsg').textContent='';$('psGo').focus();
 }
 
 // ---- intro: tap a face to see and feel its nudge ----
@@ -946,7 +977,7 @@ function preview(btn){
   document.querySelectorAll('.cue.on').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
   $('heroFace').innerHTML=faceSVG(EXPR[c],CUES[c].fill);setBg(.8);theme();
   $('demo').classList.add('hot');$('demo').textContent=CUES[c].msg;
-  if($('vib').checked&&navigator.vibrate)navigator.vibrate([120,80,120]);
+  buzz();
   if($('chime').checked)chime();
   demoT=setTimeout(endPreview,2800);
 }
@@ -1076,6 +1107,13 @@ function boot(){
     if(S.mode==='live'&&gone>=3)$('liveNote').textContent=`Steady paused for ${gone} seconds while this window was hidden. Keep it in view during your meeting.`;
   });
   $('out').onclick=signOut;
+  $('histAll').onclick=delAll;
+  $('testNudge').onclick=()=>{
+    const v=$('vib').checked,c=$('chime').checked;buzz();if(c)chime();
+    $('alert').textContent=`Test nudge. Vibration ${v?(CAN_VIBRATE||IOS?'on':'not supported here'):'off'}, chime ${c?'on':'off'}. Change these on the start screen.`;
+    $('alert').classList.add('hot');S.alertUntil=performance.now()+3500;
+  };
+  alertNotes();
   document.querySelectorAll('input[name=sens]').forEach(r=>{r.onchange=saveSet});
   $('vib').onchange=saveSet;
   $('chime').onchange=()=>{saveSet();if($('chime').checked)chime()};
