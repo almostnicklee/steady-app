@@ -3,6 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#152465">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com data: blob:">
 <meta name="description" content="Steady is a private, on-device coach for how you come across in meetings.">
 <title>Steady</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -104,6 +105,10 @@ tr:last-child td{border-bottom:0}
 #summary{text-align:center}
 #summary .panel{text-align:left}
 .sumFace{width:146px;height:146px;margin:14px auto 20px}
+.expr{text-align:center;margin:-6px 0 16px}
+.expr b{display:block;font-size:26px;font-weight:900;line-height:1.15}
+.expr span{display:block;font-size:16px;font-weight:700;color:var(--soft);min-height:24px}
+.step{font-weight:800;color:#fff;margin:0 0 6px}
 
 /* sign-in */
 .fld{display:block;font-weight:700;margin:0 0 14px}
@@ -152,6 +157,11 @@ button:disabled{opacity:.55;cursor:default}
   <h1>Steady</h1>
   <p class="sub">A quiet coach for your meetings. It watches your face and listens to your voice, then nudges you the moment a reaction might land badly.</p>
   <button class="primary" id="go">Start a session</button>
+  <div class="panel" id="psCard">
+    <h2 id="psTitle">Personal setup</h2>
+    <p class="note" id="psNote"></p>
+    <button class="primary" id="psGo" type="button" style="width:100%">Start personal setup</button>
+  </div>
 
   <h2>Set up in a minute</h2>
   <ol class="steps">
@@ -179,7 +189,7 @@ button:disabled{opacity:.55;cursor:default}
   </div>
 
   <h2>Private by design</h2>
-  <p class="note">Everything is analyzed on this device, in memory. No video or audio is recorded, saved, or uploaded. The mic will hear other people, but voice cues only count while your own mouth is moving, and nothing anyone says is transcribed or kept. Your session scores and settings are saved on this device. If you turn on Remember my normal, a small profile is saved here too: numbers such as your resting brow reading, your usual pitch and pace, and your normal range for each cue. It holds no audio, video or images, it is encrypted with your sign-in, and turning the switch off deletes it. The app's code and models download from public libraries (jsDelivr and Google); they receive an ordinary web request, never your camera or microphone.</p>
+  <p class="note">Everything is analyzed on this device, in memory. No video or audio is recorded, saved, or uploaded. The mic will hear other people, but voice cues only count while your own mouth is moving, and nothing anyone says is transcribed or kept. Your session scores and settings are saved on this device. If you turn on Remember my normal, a small profile is saved here too: numbers such as your resting brow reading, your usual pitch and pace, and your normal range for each cue. It holds no audio, video or images, it is encrypted with your sign-in, and turning the switch off deletes it. The app's code and models download from public libraries (jsDelivr and Google); they receive an ordinary web request, never your camera or microphone. The page is locked so it cannot connect anywhere else, which also stops the face library's built-in usage reports.</p>
   <div id="histCard" hidden><h2>Recent sessions</h2><table id="hist"></table></div>
   <p style="margin:18px 0 0"><button class="link" id="out" type="button">Sign out</button></p>
   <p class="note" style="margin-top:14px">Steady is a self-coaching aid for your own use. It reads visible expressions and voice level, not feelings, and its cues are estimates that will sometimes be wrong. It is not a medical or diagnostic tool, and it is not for monitoring or evaluating other people.</p>
@@ -189,9 +199,10 @@ button:disabled{opacity:.55;cursor:default}
   <div class="count" id="ccount" aria-hidden="true">15</div>
   <p class="status" id="cstat" role="status" aria-live="polite">Getting ready...</p>
   <div class="panel">
-    <p class="note">Keep a relaxed, neutral face and read this out loud in your normal voice. Then keep talking until the timer ends.</p>
-    <p class="read">"Yesterday I walked to the corner store, picked up a few things for dinner, and chatted with a neighbor about the weather and our plans for the weekend."</p>
-    <p class="note" style="margin:0">Already in a meeting? Stay quiet and neutral instead. Steady will learn your voice from your first few sentences.</p>
+    <p class="step" id="calStep" hidden></p>
+    <p class="note" id="calNote"></p>
+    <p class="read" id="calRead"></p>
+    <p class="note" id="calTip" style="margin:0"></p>
   </div>
   <div class="row"><button class="ghost" id="cskip" hidden>Start anyway</button><button class="ghost" id="cback">Cancel</button></div>
 </section>
@@ -202,6 +213,7 @@ button:disabled{opacity:.55;cursor:default}
     <svg class="ringsvg" viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="56"/><circle id="arc" cx="60" cy="60" r="56" stroke-dasharray="351.9" stroke-dashoffset="0"/></svg>
     <div class="face" id="liveFace" aria-hidden="true"></div>
   </div>
+  <p class="expr"><b id="exName">Neutral</b><span id="exRead">Reads as calm</span></p>
   <div class="alert" id="alert" role="status" aria-live="polite">Looking steady.</div>
   <div class="panel meters">
     <div class="m"><span>Face</span><div class="bar"><i id="bFace"></i></div><span id="vFace">ok</span></div>
@@ -216,7 +228,7 @@ button:disabled{opacity:.55;cursor:default}
 
 <section id="summary" class="view">
   <div class="face sumFace" id="sumFace" aria-hidden="true"></div>
-  <h1>Session done</h1>
+  <h1 id="sumTitle">Session done</h1>
   <p class="sub" id="sumLine"></p>
   <div class="panel"><h2>Nudges</h2><table id="sumTable"></table></div>
   <div class="panel" id="remAsk" hidden>
@@ -277,14 +289,14 @@ const LP=(()=>{const w=2*Math.PI*1000/SR,c=Math.cos(w),al=Math.sin(w)/1.4142,a0=
 
 // tau: how fast a cue builds (s). hold: how long it must stay high before a nudge (s). cool: gap between nudges (s).
 const CUES={
-  scowl:{w:1,tau:.35,hold:.7,msg:'Brow is tightening. Soften your face.',label:'Frown or scowl',short:'Scowl',fill:'#ffab8f'},
-  tense:{w:.6,tau:.45,hold:.9,msg:'Lips pressed tight. Relax your jaw.',label:'Tight lips',short:'Tight lips',fill:'#ffd98a'},
-  sneer:{w:1,tau:.25,hold:.4,msg:'That may read as a smirk. Reset to neutral.',label:'Sneer or smirk',short:'Smirk',fill:'#cdbaf3'},
-  roll:{w:1.2,tau:.12,hold:.25,msg:'Eyes rolling up. Bring them back level.',label:'Eye roll',short:'Eye roll',fill:'#aebcf5'},
-  loud:{w:1,tau:.4,hold:.6,msg:'Voice is rising. Bring it down a notch.',label:'Getting loud',short:'Loud',fill:'#ff9c8a'},
-  pitch:{w:.7,tau:.6,hold:1,msg:'Pitch is climbing. Breathe out and lower your voice.',label:'Pitch rising',short:'High pitch',fill:'#f8b6c8'},
-  fast:{w:.7,tau:1,hold:1.5,msg:'You are speeding up. Slow down and pause.',label:'Talking fast',short:'Rushing',fill:'#b4e4c8'},
-  hog:{w:.5,tau:2,hold:0,cool:60,msg:'You have held the floor for a while. Ask a question.',label:'Long stretch of talking',short:'Long turn',fill:'#a9d9f5'}
+  scowl:{w:1,tau:.35,hold:.7,msg:'Brow is tightening. Soften your face.',label:'Frown or scowl',short:'Scowl',fill:'#ffab8f',ex:'Scowling',rd:'May read as frustrated'},
+  tense:{w:.6,tau:.45,hold:.9,msg:'Lips pressed tight. Relax your jaw.',label:'Tight lips',short:'Tight lips',fill:'#ffd98a',ex:'Lips pressed',rd:'May read as tense or annoyed'},
+  sneer:{w:1,tau:.25,hold:.4,msg:'That may read as a smirk. Reset to neutral.',label:'Sneer or smirk',short:'Smirk',fill:'#cdbaf3',ex:'Smirking',rd:'May read as dismissive'},
+  roll:{w:1.2,tau:.12,hold:.25,msg:'Eyes rolling up. Bring them back level.',label:'Eye roll',short:'Eye roll',fill:'#aebcf5',ex:'Eye roll',rd:'May read as dismissive'},
+  loud:{w:1,tau:.4,hold:.6,msg:'Voice is rising. Bring it down a notch.',label:'Getting loud',short:'Loud',fill:'#ff9c8a',ex:'Voice raised',rd:'May sound angry'},
+  pitch:{w:.7,tau:1,hold:2,msg:'Pitch has stayed high. Breathe out and lower your voice.',label:'Pitch rising',short:'High pitch',fill:'#f8b6c8',ex:'Pitch up',rd:'May sound stressed'},
+  fast:{w:.7,tau:1,hold:1.5,msg:'You are speeding up. Slow down and pause.',label:'Talking fast',short:'Rushing',fill:'#b4e4c8',ex:'Rushing',rd:'May sound anxious'},
+  hog:{w:.5,tau:2,hold:0,cool:60,msg:'You have held the floor for a while. Ask a question.',label:'Long stretch of talking',short:'Long turn',fill:'#a9d9f5',ex:'Long turn',rd:'Others may want a say'}
 };
 // the resting look of the on-screen face (see faceSVG for what each number draws)
 const CALM={b:0,bo:0,by:0,eo:1,ea:1,lk:0,ld:0,mc:.6,mo:0,mw:1,mz:0,ma:0,bl:.6};
@@ -295,15 +307,15 @@ const S={};
 function resetState(){
   for(const k in S)delete S[k];
   Object.assign(S,{mode:'idle',note:'',noise:-60,db:-90,vp:-1,speech:false,self:false,selfSeen:-1e9,lastF0:-1e9,
-    lvl:[],f0s:[],alphas:[],selfT:[],peaks:[],rate:0,lp:[0,0,0,0],eh:[-90,-90,-90,-90],env:-90,valley:-90,rising:false,lastPeak:0,
+    lvl:[],f0s:[],f0t:[],alphas:[],selfT:[],peaks:[],rate:0,lp:[0,0,0,0],eh:[-90,-90,-90,-90],env:-90,valley:-90,rising:false,lastPeak:0,
     bs:{},prev:null,lm:null,faceT:0,faceSeen:-1e9,mouth:0,mouthUntil:0,pose:false,yaw:0,nod:0,
-    cal:{db:[],pitch:[],alpha:[],secs:0,peaks:0,mouthS:[],mouthI:[],brow:[],frown:[],press:[],sneer:[],asym:[],up:[],yaw:[],nod:[]},
-    learn:{db:[],pitch:[],alpha:[],secs:0,peaks:0},learnF:{brow:[],frown:[],press:[],sneer:[],asym:[],up:[],yaw:[],nod:[]},
+    cal:{db:[],pitch:[],ptime:[],alpha:[],secs:0,peaks:0,mouthS:[],mouthI:[],brow:[],frown:[],press:[],sneer:[],asym:[],smile:[],up:[],yaw:[],nod:[]},
+    learn:{db:[],pitch:[],ptime:[],alpha:[],secs:0,peaks:0},learnF:{brow:[],frown:[],press:[],sneer:[],asym:[],smile:[],up:[],yaw:[],nod:[]},
     base:null,bad:{},hold:{},cool:{},counts:{},heat:0,score:100,scores:[],lastSample:0,t0:0,alertUntil:0,
     talk:new Float32Array(90),sec:-1,share:0,dL:0,st:0,top:null,topV:0,alignT:0,frameT0:0,calT0:0,hiddenAt:0,themeT:0,
-    fp:{...CALM},ff:[255,217,120],sig:'',off:{},prof:null,mute:0,mins:0,
-    ses:{brow:[],frown:[],press:[],sneer:[],asym:[],f0:[],rate:[],x:{}}});
-  for(const k in CUES){S.bad[k]=0;S.hold[k]=0;S.cool[k]=0;S.counts[k]=0;S.off[k]=0;S.ses.x[k]=[]}
+    fp:{...CALM},ff:[255,217,120],sig:'',T:{},prof:null,mute:0,mins:0,gA:null,gTalk:false,gMouth:{S:[],I:[]},v:null,
+    ses:{brow:[],frown:[],press:[],sneer:[],asym:[],smile:[],f0:[],rate:[],x:{}}});
+  for(const k in CUES){S.bad[k]=0;S.hold[k]=0;S.cool[k]=0;S.counts[k]=0;S.T[k]=.5;S.ses.x[k]=[]}
 }
 
 // Silero voice activity model: one 32 ms chunk in, the chance that it contains speech out
@@ -330,12 +342,12 @@ async function onAudio(x){
   if(vad){try{p=await vadRun(x)}catch(e){console.warn(e);vad=null}}
   const speech=now>=S.mute&&(p<0?db>S.noise+10:p>(S.speech?.35:.5)); // S.mute: skip our own chime
   S.speech=speech;S.vp=p;
-  const live=S.mode==='live',cal=S.mode==='calib';
+  const live=S.mode==='live',cal=S.mode==='calib',gd=S.mode==='guided';
   const faceOn=!!face&&hasVideo,faceOk=faceOn&&now-S.faceSeen<1200;
   // speech only counts as yours while your mouth is moving (or always, when there is no camera)
-  const self=speech&&(cal||!faceOn||(faceOk&&now<S.mouthUntil));
+  const self=speech&&(cal||(gd&&S.gTalk)||!faceOn||(faceOk&&now<S.mouthUntil));
   S.self=self;
-  const A=cal?S.cal:live&&S.base&&!S.base.voice?S.learn:null;
+  const A=cal?S.cal:gd?S.gA:live&&S.base&&!S.base.voice?S.learn:null;
   let f0=0,al=null;
   if(speech){f0=yin(WIN);if(f0){al=tilt(WIN);S.lastF0=now}}
   // count syllables: peaks in the smoothed low-frequency loudness, in 16 ms steps
@@ -350,14 +362,16 @@ async function onAudio(x){
     S.env=sm;
   }
   if(cal&&faceOk)(speech?S.cal.mouthS:S.cal.mouthI).push(S.mouth);
+  if(gd&&faceOk){if(!S.gTalk)S.gMouth.I.push(S.mouth);else if(speech)S.gMouth.S.push(S.mouth)}
   if(self){
     S.selfSeen=now;S.selfT.push(now);
-    push(S.lvl,db,60);if(f0){push(S.f0s,f0,40);push(S.alphas,al,40)}
-    if(A){A.db.push(db);A.secs+=.032;if(f0){A.pitch.push(f0);A.alpha.push(al)}}
-  }else if(S.lvl.length&&now-S.selfSeen>3000){S.lvl.length=0;S.f0s.length=0;S.alphas.length=0}
-  while(S.selfT.length&&now-S.selfT[0]>8000)S.selfT.shift();
-  while(S.peaks.length&&now-S.peaks[0]>8000)S.peaks.shift();
-  const ss=S.selfT.length*.032;S.rate=ss>=3?S.peaks.length/ss:0; // syllables per second of your own speech, over the last 8 s
+    push(S.lvl,db,60);if(f0){push(S.f0s,f0,40);push(S.alphas,al,40);S.f0t.push([now,f0])}
+    if(A){A.db.push(db);A.secs+=.032;if(f0){A.pitch.push(f0);A.ptime.push(now);A.alpha.push(al)}}
+  }else if(S.lvl.length&&now-S.selfSeen>3000){S.lvl.length=0;S.f0s.length=0;S.alphas.length=0;S.f0t.length=0}
+  while(S.f0t.length&&now-S.f0t[0][0]>5000)S.f0t.shift(); // pitch is judged over the last 5 s, not a single phrase
+  while(S.selfT.length&&now-S.selfT[0]>12000)S.selfT.shift();
+  while(S.peaks.length&&now-S.peaks[0]>12000)S.peaks.shift();
+  const ss=S.selfT.length*.032;S.rate=ss>=4?S.peaks.length/ss:0; // syllables per second of your own speech, over the last 12 s
   if(live){
     const sec=Math.floor((now-S.t0)/1000);if(sec!==S.sec){S.sec=sec;S.talk[sec%90]=0}
     if(self)S.talk[sec%90]+=.032;
@@ -366,7 +380,7 @@ async function onAudio(x){
 }
 // How far each cue has drifted from your own normal: 0 is none, .5 earns a nudge, 1 is a lot (before sensitivity).
 function faceDrive(v,F,x){
-  const soft=clamp(1-(v.smile-.35)*3); // a broad smile is not a scowl
+  const soft=clamp(1-(v.smile-Math.max(.35,(F.smile||0)+.25))*3); // a broad smile (beyond your resting one) is not a scowl
   x.scowl=clamp((v.brow-F.brow)*1.6+(v.frown-F.frown)*2,0,1.5)*soft;
   x.tense=Math.max(0,(v.press-F.press)*1.8)*soft;
   x.sneer=Math.max(0,(v.sneer-F.sneer)*2.5+Math.max(0,Math.abs(v.asym-F.asym)-.18)*2.5);
@@ -379,18 +393,23 @@ function voiceDrive(t,x){
       const dA=V.alpha!=null&&S.alphas.length>=8?clamp(med(S.alphas)-V.alpha,-3,8):0;
       S.dL=topMean(S.lvl)-V.db;S.dA=dA;x.loud=(.5*S.dL+.8*dA-3.5)/5;
     }
-    if(V.pitch&&S.f0s.length>=10){S.st=12*Math.log2(med(S.f0s)/V.pitch);x.pitch=(S.st-2.5)/4}
-    if(V.rate&&S.rate)x.fast=(S.rate/V.rate-1.15)/.3; // the pace estimate is rough, so this cue is deliberately slow to trigger
+    if(V.pitch&&S.f0t.length>=25){S.st=pitchSt(S.f0t.map(q=>q[1]),V.pitch);x.pitch=S.st/9} // 4.5 semitones, held, is the default trigger
+    if(V.rate&&S.rate)x.fast=(S.rate/V.rate-1)/.36; // the pace estimate understates real speed-ups, so the default trigger is 18% over your normal
   }
   const el=(t-S.t0)/1000;let tk=0;for(let i=0;i<90;i++)tk+=S.talk[i];
   S.share=el>5?clamp(tk/Math.min(90,el)):0; // share of the last 90 seconds you spent talking
   if(el>45)x.hog=(S.share-.55)/.3;
 }
-// apply your personal allowance (learned from earlier sessions) and the sensitivity setting k
-function rawFrom(x,k){const raw={};for(const c in CUES)raw[c]=clamp(((x[c]||0)-S.off[c])*k);return raw}
+// median pitch in semitones above your normal, ignoring octave slips of the pitch tracker
+function pitchSt(f,base){
+  const a=f.map(v=>v>1.85*base?v/2:v<base/1.85?v*2:v);
+  return 12*Math.log2(med(a)/base);
+}
+// each cue earns a nudge when its drive passes your personal threshold T (default .5). k is the sensitivity setting.
+function rawFrom(x,k){const raw={};for(const c in CUES)raw[c]=clamp(Math.max(0,x[c]||0)*.5/S.T[c]*k);return raw}
 
 // ---- personal profile: a few dozen numbers learned across sessions. No audio, video or images. ----
-const FACE5=['brow','frown','press','sneer','asym'];
+const FACE5=['brow','frown','press','sneer','asym','smile'];
 const pct=(a,q)=>{const b=Array.from(a).sort((x,y)=>x-y);return b.length?b[Math.min(b.length-1,Math.floor(q*b.length))]:0};
 // blend today's setup with what earlier sessions learned about your resting face and usual voice
 function faceWith(F,P){
@@ -398,20 +417,29 @@ function faceWith(F,P){
   return F;
 }
 function voiceWith(V,P){
-  if(V&&P&&P.n&&P.voice){
-    if(P.voice.pitch&&V.pitch)V.pitch=Math.exp(lerp(Math.log(V.pitch),Math.log(P.voice.pitch),.5));
-    if(P.voice.rate)V.rate=lerp(V.rate,P.voice.rate,.5);
+  if(V&&P&&(P.n||P.setup)&&P.voice){
+    const w=P.setup?.8:.5; // a personal setup is trusted more than today's first sentences
+    if(P.voice.pitch)V.pitch=V.pitch?Math.exp(lerp(Math.log(V.pitch),Math.log(P.voice.pitch),w)):P.voice.pitch;
+    if(P.voice.rate)V.rate=lerp(V.rate,P.voice.rate,w);
   }
   return V;
 }
-// your normal range: a cue that often runs a little high for you has to go a little higher to count (capped, so it never switches a cue off)
-function offsets(P){for(const c in CUES)S.off[c]=P&&P.n&&P.range&&P.range[c]!=null?clamp(P.range[c]-.25,0,.15):0}
+// personal thresholds: from the personal setup, then nudged up (a little, capped) if a cue keeps running high for you in meetings
+function thresholds(P){
+  const T0=P&&P.setup&&P.setup.T||{};
+  for(const c in CUES){
+    let T=T0[c]!=null?T0[c]:.5;
+    const r=P&&P.n&&P.range?P.range[c]:null;
+    if(r!=null)T=Math.max(T,Math.min(r+.25,T+.15));
+    S.T[c]=clamp(T,.2,.95);
+  }
+}
 // called twice a second during a session: v is the face reading (or null), x the cue drives
 function sampleSession(v,x,talking){
   const q=S.ses;
   if(v){for(const k of FACE5)q[k].push(v[k]);for(const c of ['scowl','tense','sneer','roll'])q.x[c].push(Math.max(0,x[c]))}
   if(talking&&S.base.voice){
-    if(S.f0s.length>=10)q.f0.push(med(S.f0s));
+    if(S.f0t.length>=25)q.f0.push(med(S.f0t.map(z=>z[1])));
     if(S.rate)q.rate.push(S.rate);
     for(const c of ['loud','pitch','fast'])q.x[c].push(Math.max(0,x[c]));
   }
@@ -419,7 +447,7 @@ function sampleSession(v,x,talking){
 // fold one finished session (at least a minute long) into the profile
 function learn(P,mins){
   const q=S.ses,mix=(a,b)=>a==null?b:lerp(a,b,.25);
-  P=P&&P.v===1?P:{v:1,n:0,t:0,face:{},voice:{},range:{}};
+  P=P&&P.v===2?P:{v:2,n:0,t:0,face:{},voice:{},range:{}};
   if(!(mins>=1))return P;
   let got=false;
   if(q.brow.length>=60){for(const k of FACE5)P.face[k]=mix(P.face[k],med(q[k]));got=true}
@@ -428,6 +456,53 @@ function learn(P,mins){
   for(const c in q.x)if(q.x[c].length>=40)P.range[c]=mix(P.range[c],pct(q.x[c],.9));
   if(S.base&&S.base.mthrCal)P.mthr=mix(P.mthr,S.base.mthr);
   if(got){P.n++;P.t=Date.now()}
+  return P;
+}
+// ---- one-time personal setup: turn the guided steps into a profile ----
+// G[step] = {face:[readings], a:{db,pitch,ptime,alpha,secs,peaks}}, M = mouth movement while talking (S) and silent (I)
+function buildSetup(G,M,P){
+  const face=st=>(G[st]&&G[st].face)||[],calm=[...face('rest'),...face('listen')];
+  if(calm.length<20)return null;
+  const F={};for(const k of [...FACE5,'up'])F[k]=med(calm.map(v=>v[k]));
+  const drives=list=>list.map(v=>{const x={};faceDrive(v,F,x);return x});
+  const natural=drives([...calm,...face('read'),...face('story')]),T={},posedAt={};
+  const nat=c=>pct(natural.map(x=>x[c]),.95);
+  const posed=(st,c)=>face(st).length>=8?pct(drives(face(st)).map(x=>x[c]),.75):0;
+  for(const [c,st] of [['scowl','frown'],['tense','press'],['sneer',null],['roll',null]]){
+    const n=nat(c),p=st?posed(st,c):0;if(st)posedAt[c]=p;
+    T[c]=p>n+.2?clamp(n+.45*(p-n),Math.max(.25,n+.12),.9):clamp(Math.max(.5,n+.15),.25,.9);
+  }
+  const sm=face('smile').length?med(face('smile').map(v=>v.smile)):.8;
+  // voice: your normal is the read plus the story; the story shows how far your pitch swings when you are relaxed and lively
+  const A=k=>(G[k]&&G[k].a)||{db:[],pitch:[],ptime:[],alpha:[],secs:0,peaks:0},rd=A('read'),sy=A('story'),fs=A('fast');
+  const voice={},pitches=[...rd.pitch,...sy.pitch];
+  if(pitches.length>=40){
+    voice.pitch=med(pitches);
+    const sw=[];
+    for(const a of [rd,sy])for(let i=0;i<a.pitch.length;i+=3){
+      const w=[];for(let j=i;j>=0&&a.ptime[i]-a.ptime[j]<=3000;j--)w.push(a.pitch[j]);
+      if(w.length>=20)sw.push(pitchSt(w,voice.pitch));
+    }
+    T.pitch=clamp((Math.max(0,pct(sw,.9))+2)/9,3.5/9,8/9); // 2 semitones above your own lively range, at least 3.5
+  }
+  const rate=a=>a.secs>=3?a.peaks/a.secs:0,rn=rate(rd),rs=rate(sy),rf=rate(fs);
+  if(rn||rs){
+    voice.rate=rn&&rs?(rn+rs)/2:rn||rs;
+    let R=1.18;
+    if(rf>voice.rate*1.06)R=1+.55*(rf/voice.rate-1); // trigger a bit over halfway to your rushed pace
+    if(rs)R=Math.max(R,rs/voice.rate+.05);
+    T.fast=clamp((Math.max(1.12,R)-1)/.36,.33,.9); // never below 12%: normal speech wanders about that much
+  }
+  if(rd.alpha.length>=20&&sy.db.length>=40&&rd.db.length>=40){
+    const x=(.5*(topMean(sy.db)-topMean(rd.db))+.8*(med(sy.alpha)-med(rd.alpha))-3.5)/5;
+    T.loud=clamp(Math.max(.5,x+.2),.5,.9);
+  }
+  const mS=med(M.S),mI=med(M.I);
+  P=P&&P.v===2?P:{v:2,n:0,t:0,face:{},voice:{},range:{}};
+  P.face={};for(const k of FACE5)P.face[k]=F[k];
+  P.voice={...P.voice,...voice};P.range={};
+  if(M.S.length>=20&&mS>Math.max(.15,2*mI))P.mthr=clamp(.4*mS,Math.max(.1,1.5*mI),.7);
+  P.setup={t:Date.now(),T,posed:posedAt,smile:F.smile,smileHi:Math.max(sm,F.smile+.2)};
   return P;
 }
 // Advance every cue by one frame. Returns the cues that have just earned a nudge.
@@ -574,7 +649,7 @@ function mediaError(e){
 
 // ---- reading the face ----
 const g=k=>S.bs[k]||0;
-const FK=['brow','frown','press','sneer','asym','up'];
+const FK=['brow','frown','press','sneer','asym','smile','up'];
 const faceVals=()=>({brow:(g('browDownLeft')+g('browDownRight'))/2,frown:(g('mouthFrownLeft')+g('mouthFrownRight'))/2,
   press:(g('mouthPressLeft')+g('mouthPressRight'))/2,sneer:(g('noseSneerLeft')+g('noseSneerRight'))/2,
   asym:g('mouthSmileLeft')-g('mouthSmileRight'),smile:(g('mouthSmileLeft')+g('mouthSmileRight'))/2,up:Math.min(g('eyeLookUpLeft'),g('eyeLookUpRight'))});
@@ -616,10 +691,33 @@ function guide(faceOk){
 
 // ---- session flow ----
 const status=s=>{const e=$('cstat');if(e.textContent!==s)e.textContent=s};
+const PASSAGE='"Yesterday I walked to the corner store, picked up a few things for dinner, and chatted with a neighbor about the weather and our plans for the weekend."';
+// the one-time personal setup. Each step records for its length (s), skipping the first moment while you change what you are doing.
+const STEPS=[
+  {k:'rest',s:8,say:'Relax your face and stay quiet.',note:'Look at the screen the way you do when you are just listening in a meeting.'},
+  {k:'listen',s:8,say:'Now listen as if a colleague is talking.',note:'React the way you naturally would: nod, think, glance at your notes. Stay quiet.'},
+  {k:'read',s:14,talk:1,say:'Read this out loud at your normal pace.',read:PASSAGE},
+  {k:'story',s:14,talk:1,say:'Tell a short story in your normal, lively voice.',note:'For example, describe a recent weekend or a meal you enjoyed, the way you would to a friendly coworker.'},
+  {k:'fast',s:10,talk:1,say:'Read it again, rushing as if you are out of time.',read:PASSAGE},
+  {k:'smile',s:5,say:'Give a natural smile.'},
+  {k:'frown',s:5,say:'Now frown, as if you are annoyed.',note:'This shows Steady what your frown looks like, so it can catch a smaller one.'},
+  {k:'press',s:5,say:'Press your lips together tightly.'}
+];
+function calText(step,note,read,tip){
+  $('calStep').hidden=!step;$('calStep').textContent=step||'';
+  $('calNote').textContent=note||'';$('calRead').hidden=!read;$('calRead').textContent=read||'';$('calTip').textContent=tip||'';
+}
 function camMode(m){const c=$('cam');c.hidden=m==='off';c.classList.toggle('big',m==='big')}
-async function start(){
+async function start(mode){
   if(!pkey||busy||running)return;busy=true;clearTimeout(demoT);endPreview();
   resetState();
+  S.after=mode==='setup'?'guided':'calib';
+  S.quick=S.after==='calib'&&$('rem').checked&&!!(profile&&profile.setup);
+  S.calLen=S.quick?6:15;
+  if(S.after==='guided')calText('','Personal setup takes about a minute. Find a quiet spot, face the camera, and follow each step.','','');
+  else if(S.quick)calText('','Steady is using your personal profile. This quick check matches today\'s camera and light.','','');
+  else calText('','Keep a relaxed, neutral face and read this out loud in your normal voice. Then keep talking until the timer ends.',PASSAGE,
+    'Already in a meeting? Stay quiet and neutral instead. For better accuracy, run Personal setup from the start screen once.');
   show('calib');$('cskip').hidden=true;$('ccount').className='count';$('guide').classList.remove('ok');
   status('Asking for camera and microphone...');
   try{stream=await getMedia()}catch(e){status(mediaError(e));busy=false;return}
@@ -630,6 +728,7 @@ async function start(){
   if(hasAudio){try{await startAudio();loadVAD()}catch(e){console.warn(e);hasAudio=false}}
   const ok=hasVideo?await loadFace():false;
   if(stream!==mine)return; // cancelled while loading
+  if(S.after==='guided'&&!(ok&&hasAudio)){end();show('calib');status('Personal setup needs both the camera and the microphone. Allow both, then try again.');return}
   try{wake=await navigator.wakeLock?.request('screen')}catch(e){wake=null}
   S.note=!hasVideo?'No camera this session, so Steady is listening only. Wear headphones so it hears just you.'
     :!ok?'The face model could not load, so Steady is listening only this session.'
@@ -639,10 +738,39 @@ async function start(){
   if(face&&hasVideo){S.mode='frame';S.frameT0=t;status('Line up your face inside the outline.')}else beginCal(t);
   requestAnimationFrame(tick);
 }
+const calSay=()=>S.quick||!hasAudio?'Relax your face and stay quiet for a moment.':'Now read the words below out loud.';
 function beginCal(t){
+  if(S.after==='guided')return beginGuided(t);
   S.mode='calib';S.calT0=t;$('cskip').hidden=true;
   $('ccount').className='count on'+(hasVideo?'':' solo');
-  status(hasAudio?'Now read the words below out loud.':'Hold a relaxed, neutral face.');
+  status(calSay());
+}
+function beginGuided(t){S.mode='guided';S.gi=-1;S.G={};$('cskip').hidden=true;nextStep(t)}
+function nextStep(t){
+  S.gi++;S.gA=null;
+  if(S.gi>=STEPS.length)return finishGuided();
+  const st=STEPS[S.gi];S.gT0=t;S.gTalk=!!st.talk;
+  S.G[st.k]={face:[],a:{db:[],pitch:[],ptime:[],alpha:[],secs:0,peaks:0}};
+  $('ccount').className='count on';$('ccount').textContent=st.s;
+  status(st.say);calText(`Step ${S.gi+1} of ${STEPS.length}`,st.note,st.read,'');
+}
+function finishGuided(){
+  const P=buildSetup(S.G,S.gMouth,profile);
+  stopMedia();S.mode='done';
+  if(!P){show('calib');calText('','','','');status('Steady could not see your face clearly enough. Try again with your face in good light.');return}
+  profile=P;$('rem').checked=true;asked=true;saveSet();saveProfile();remNote();
+  const T=P.setup.T,po=P.setup.posed||{},rows=[['Your resting face','Saved as your neutral']];
+  if(T.pitch)rows.push(['Pitch nudge',`When your voice stays about ${Math.round((2**(T.pitch*9/12)-1)*100)}% above your normal`]);
+  if(T.fast)rows.push(['Pace nudge',`When you speak about ${Math.round(T.fast*36)}% faster than your normal`]);
+  if(po.scowl>T.scowl)rows.push(['Frown nudge',`At about ${Math.round(T.scowl/po.scowl*100)}% of your full frown`]);
+  if(po.tense>T.tense)rows.push(['Tight lips nudge',`At about ${Math.round(T.tense/po.tense*100)}% of your full press`]);
+  $('sumTitle').textContent='Setup done';
+  $('sumLine').textContent='Steady is now tuned to you. Sessions start with a quick 6 second check instead of reading aloud.';
+  const tb=$('sumTable');tb.textContent='';
+  for(const [a,b] of rows){const tr=tb.insertRow();tr.insertCell().textContent=a;tr.insertCell().textContent=b}
+  $('sumTable').closest('.panel').querySelector('h2').textContent='What Steady learned';
+  $('sumFace').innerHTML=faceSVG(EXPR.happy,MOONS);$('remAsk').hidden=true;$('remDone').hidden=true;
+  show('summary');
 }
 function finishCal(t){
   const C=S.cal,mS=med(C.mouthS),mI=med(C.mouthI),seen=C.mouthS.length>=20;
@@ -651,9 +779,9 @@ function finishCal(t){
   const use=S.prof=$('rem').checked?profile:null,cal=spoke&&seen; // the saved profile, if you asked Steady to remember
   S.base={voice:voiceWith(spoke?voiceBase(C):null,use),fb:faceWith(faceBase(C),use),mthrCal:cal,
     mthr:cal?clamp(.4*mS,Math.max(.1,1.5*mI),.7):use&&use.mthr?use.mthr:clamp(3*Math.max(mI,seen?mS:0),.15,MTHR)};
-  offsets(use);
+  thresholds(use);
   S.mode='live';S.t0=t;S.sec=-1;S.heat=0;S.score=100;S.lvl.length=S.f0s.length=S.alphas.length=0;
-  $('liveNote').textContent=S.note||(hasAudio&&!S.base.voice?'Steady will learn your normal voice from your first few sentences.':'Bars fill as a cue drifts from your normal.');
+  $('liveNote').textContent=S.note||(hasAudio&&!S.base.voice?(use&&use.setup?'Using your personal profile. Steady matches your voice level in your first few sentences.':'Steady will learn your normal voice from your first few sentences.'):'Bars fill as a cue drifts from your normal.');
   $('alert').classList.remove('hot');$('alert').textContent='Looking steady.';
   camMode('mini');show('live');
 }
@@ -673,9 +801,16 @@ function tick(t){
     if(q.ok){if(!S.alignT)S.alignT=t;if(t-S.alignT>900)beginCal(t)}else S.alignT=0;
     if(S.mode==='frame'&&t-S.frameT0>7000)$('cskip').hidden=false;
   }else if(S.mode==='calib'){
-    if(face&&hasVideo){const q=guide(faceOk);status(q.ok?(hasAudio?'Now read the words below out loud.':'Hold a relaxed, neutral face.'):'Keep your face inside the outline.');if(fresh)collectFace(S.cal)}
-    const left=15-(t-S.calT0)/1000;$('ccount').textContent=Math.max(1,Math.ceil(left));
+    if(face&&hasVideo){const q=guide(faceOk);status(q.ok?calSay():'Keep your face inside the outline.');if(fresh)collectFace(S.cal)}
+    const left=S.calLen-(t-S.calT0)/1000;$('ccount').textContent=Math.max(1,Math.ceil(left));
     if(left<=0)finishCal(t);
+  }else if(S.mode==='guided'){
+    const st=STEPS[S.gi],el=(t-S.gT0)/1000,q=guide(faceOk);
+    if(el>1.2&&!S.gA)S.gA=S.G[st.k].a;
+    status(st.say);const tip=q.ok?'':'Keep your face inside the outline.';if($('calTip').textContent!==tip)$('calTip').textContent=tip;
+    if(fresh&&faceOk&&el>1.2)S.G[st.k].face.push(faceVals());
+    $('ccount').textContent=Math.max(1,Math.ceil(st.s-el));
+    if(el>=st.s)nextStep(t);
   }else if(S.mode==='live')evaluate(dt,t,faceOk);
   requestAnimationFrame(tick);
 }
@@ -684,7 +819,7 @@ function evaluate(dt,t,faceOk){
   const B=S.base,x={scowl:0,tense:0,sneer:0,roll:0,loud:0,pitch:0,fast:0,hog:0};
   if(!B.fb&&faceOk){collectFace(S.learnF);if(S.learnF.brow.length>=90)B.fb=faceWith(faceBase(S.learnF),S.prof)}
   const F=B.fb,turned=!!F&&S.pose&&(Math.abs(S.yaw-F.yaw)>32||Math.abs(S.nod-F.nod)>28),seeing=faceOk&&!!F&&!turned;
-  const v=seeing?faceVals():null;
+  const v=S.v=seeing?faceVals():null;
   if(v)faceDrive(v,F,x); // face cues are paused while your head is turned away
   voiceDrive(t,x);
   if(t-S.lastSample>500)sampleSession(v,x,t-S.selfSeen<1500);
@@ -724,6 +859,11 @@ function render(t,faceOk,seeing,turned){
   bar('bPitch',S.bad.pitch);$('vPitch').textContent=off||(talking&&V.pitch?Math.round((2**(S.st/12)-1)*100):0)+'%';
   bar('bFast',S.bad.fast);$('vFast').textContent=off||(talking&&V.rate&&S.rate?(S.rate/V.rate).toFixed(1):'1.0')+'x';
   bar('bHog',S.bad.hog);$('vHog').textContent=!hasAudio?'off':Math.round(S.share*100)+'%';
+  const top=S.topV>.25?S.top:null,P=S.prof&&S.prof.setup,F=S.base.fb;let ex='Neutral',rd='Reads as calm';
+  if(top){ex=CUES[top].ex;rd=CUES[top].rd}
+  else if(face&&hasVideo&&!faceOk){ex='Face not in view';rd=''}
+  else if(S.v&&F&&S.v.smile>F.smile+.5*((P?P.smileHi:.8)-F.smile)){ex='Smiling';rd='Reads as warm'}
+  if($('exName').textContent!==ex){$('exName').textContent=ex;$('exRead').textContent=rd}
   const a=$('alert');
   if(t>S.alertUntil){
     a.classList.remove('hot');
@@ -733,15 +873,19 @@ function render(t,faceOk,seeing,turned){
   if(t-S.themeT>500){S.themeT=t;theme()}
 }
 
-function end(){
-  const was=S.mode;
+function stopMedia(){
   running=false;busy=false;
   stream?.getTracks().forEach(x=>x.stop());stream=null;video.srcObject=null;
   try{ctx?.close()}catch(e){}ctx=null;tap=null;
   try{wake?.release()}catch(e){}wake=null;
   if(vad){vad.state=new vad.T('float32',new Float32Array(256),[2,1,128]);vad.inp.fill(0)}
   camMode('off');$('discreet').classList.remove('on');setBg(0);theme();
+}
+function end(){
+  const was=S.mode;
+  stopMedia();
   if(was!=='live'){S.mode='idle';show('intro');return}
+  $('sumTitle').textContent='Session done';$('sumTable').closest('.panel').querySelector('h2').textContent='Nudges';
   const mins=(performance.now()-S.t0)/60000,avg=S.scores.length?Math.round(S.scores.reduce((a,b)=>a+b,0)/S.scores.length):100;
   const total=Object.values(S.counts).reduce((a,b)=>a+b,0);
   $('sumLine').textContent=`Average score ${avg} over ${mins<1?Math.max(1,Math.round(mins*60))+' seconds':mins.toFixed(1)+' minutes'}, with ${total} nudge${total===1?'':'s'}.`;
@@ -819,10 +963,19 @@ function loadSet(){
   if('vib' in q)$('vib').checked=!!q.vib;
   $('chime').checked=!!q.chime;$('rem').checked=!!q.rem;asked=!!q.asked;
 }
+function setupCard(){
+  const d=$('rem').checked&&profile&&profile.setup;
+  $('psTitle').textContent=d?'Personal setup done':'Personal setup';
+  $('psNote').textContent=d?`Steady is tuned to your resting face, natural voice range and pace (set up ${new Date(profile.setup.t).toLocaleDateString()}). Sessions start with a quick 6 second check.`
+    :'A one-time, 1 minute walkthrough on camera and microphone. Steady learns your resting face, your natural voice range and your pace, so it fits you from your first meeting. It saves a small profile of numbers on this device (no audio, video or images), encrypted with your sign-in.';
+  $('psGo').textContent=d?'Redo personal setup':'Start personal setup';$('psGo').className=d?'ghost':'primary';
+}
 function remNote(){
+  setupCard();
   const on=$('rem').checked,n=profile&&profile.n;
   $('remNote').textContent=!on?'Off. Nothing about your face or voice is kept between sessions.'
-    :n?`Learned from ${n} session${n===1?'':'s'}. Saved on this device only. Turn off to delete it.`
+    :n?`${profile.setup?'Personal setup saved, and learned':'Learned'} from ${n} session${n===1?'':'s'}. Saved on this device only. Turn off to delete it.`
+    :profile&&profile.setup?'Personal setup saved. Steady keeps learning from each session of a minute or more. Turn off to delete it.'
     :'On. Steady starts learning from your next session of a minute or more. Turn off to delete it.';
 }
 
@@ -901,7 +1054,8 @@ function boot(){
   $('heroFace').innerHTML=faceSVG(CALM,MOONS);
   $('cues').innerHTML=Object.keys(CUES).map(c=>`<button class="cue" data-c="${c}"><span class="face">${faceSVG(EXPR[c],CUES[c].fill)}</span>${CUES[c].short}</button>`).join('');
   $('cues').onclick=e=>{const b=e.target.closest('.cue');if(b)preview(b)};
-  $('go').onclick=start;
+  $('go').onclick=()=>start();
+  $('psGo').onclick=()=>start('setup');
   $('stop').onclick=end;
   $('cback').onclick=end;
   $('cskip').onclick=()=>{if(S.mode==='frame')beginCal(performance.now())};
