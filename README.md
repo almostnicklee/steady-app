@@ -11,9 +11,14 @@ The site is hosted free on GitHub Pages and updates automatically a minute or tw
 ## What it does
 
 - **Setup (15 seconds):** a large camera view with a head-shaped outline. The outline turns green when your face is well framed, and the countdown starts on its own.
-- **During the meeting:** a friendly face mirrors the strongest cue, the background shifts from navy through plum to red, and a short nudge appears (with a vibration on phones that support it).
+- **Personal setup (one time, about a minute):** guided steps on camera and microphone (resting face, listening, normal read, lively story, rushed read, smile, frown, pressed lips). Steady saves your resting face as your neutral and sets each nudge from your own range, so a resting face with pressed lips, or a naturally smiley one, is not flagged. After setup, sessions start with a quick 6 second check.
+- **During the meeting:** a friendly face mirrors the strongest cue with a plain label (for example "Scowling: may read as frustrated"), the background shifts from navy through plum to red, and a short nudge appears (with a vibration on phones that support it).
 - **Cues:** scowl, tight lips, smirk, eye roll, raised voice, rising pitch, rushing, and holding the floor too long. Every cue is measured against your own normal from setup.
-- **Nudge options:** vibration (phones that support it) and an optional soft chime. The chime is best with headphones, so others do not hear it.
+- **Nudge options:** vibration and an optional chime, plus a **Test nudge** button during a session to check both.
+  - Android phones vibrate, except while the phone is on silent or Do Not Disturb (Android skips website vibration then). The chime plays at media volume. Laptops cannot vibrate.
+  - iPhone does not let websites vibrate. Steady tries a light tap through a Safari switch-control trick, which may not work on every iOS version.
+  - On iPhone, while the microphone is on, iOS plays web sounds quietly through the earpiece, so use headphones to hear the chime.
+- **Recent sessions** can be deleted one at a time, or all at once.
 - **Remember my normal (optional):** Steady can keep a small profile on your device so it learns your usual baselines and normal range across sessions. It is a few dozen numbers (resting brow reading, usual pitch and pace, typical range per cue), with no audio, video or images. It is encrypted with your sign-in, never leaves the device, and turning the switch off deletes it.
 - **Privacy:** nothing is recorded or uploaded. Session scores, settings, and the optional profile are stored only in the browser on your device.
 
@@ -24,11 +29,11 @@ The site is hosted free on GitHub Pages and updates automatically a minute or tw
 | Face | MediaPipe Face Landmarker (blendshapes), `@mediapipe/tasks-vision` 1.2.3 | Free (Apache 2.0). Runs in the browser on the GPU, with a CPU fallback. |
 | Speech detection | Silero VAD v6 through `onnxruntime-web` 1.31.1 | Free (MIT). Tells speech from keyboard noise, hum, and clicks. Falls back to a loudness check if it cannot load. |
 | Whose voice | Mouth movement from the face model | Voice cues only count while your own mouth is moving. |
-| Pitch | YIN pitch tracker (in the page) | No download needed. |
+| Pitch | YIN pitch tracker (in the page) | Judged over the last 5 seconds and must stay high for 2 seconds, so normal emphasis is ignored. Default trigger is 4.5 semitones; personal setup sets it above your own lively range. |
 | Raised voice | Loudness plus voice sharpness (energy above 1 kHz) | Getting closer to the microphone raises loudness only, so it is not mistaken for a raised voice. |
-| Pace | Syllable peaks in the low-frequency loudness | Approximate. This cue is deliberately slow to trigger. |
+| Pace | Syllable peaks in the low-frequency loudness, over 12 seconds | Approximate, and it understates real speed-ups, so the default trigger is 18% over your normal. Personal setup calibrates it from your own rushed read (never below 12%). |
 
-The libraries and models load from public CDNs (jsDelivr and Google). They are fetched like any web file; no camera or microphone data is sent anywhere.
+The libraries and models load from public CDNs (jsDelivr and Google). They are fetched like any web file; no camera or microphone data is sent anywhere. A Content Security Policy in `Steady.html` only lets the page connect to those two sites. This also blocks the face library's built-in usage reports to Google (MediaPipe 1.2.x sends them every 60 seconds and has no switch to turn them off).
 
 ## Signing in
 
