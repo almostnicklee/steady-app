@@ -911,7 +911,7 @@ function end(){
 // iPhone and iPad do not let websites vibrate. Safari on iOS 17.4+ gives a light tap when a switch control is toggled,
 // so Steady toggles a hidden one. This is a best effort: iOS may only allow it right after you touch the screen.
 const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-const CAN_VIBRATE=typeof navigator.vibrate==='function';
+const CAN_VIBRATE=typeof navigator.vibrate==='function',ANDROID=/Android/i.test(navigator.userAgent);
 function buzz(){
   if(!$('vib').checked)return;
   try{
@@ -921,10 +921,13 @@ function buzz(){
 }
 function alertNotes(){
   const v=$('vibNote'),c=$('chimeNote');
-  v.hidden=CAN_VIBRATE;
-  v.textContent=IOS?'iPhone does not let websites vibrate. Steady tries a light tap instead, which may not work on every iOS version.':'This browser cannot vibrate (laptops and some browsers do not support it). Use the chime or watch the screen color.';
-  c.hidden=!IOS;
-  c.textContent='On iPhone, sound plays quietly through the earpiece while the microphone is on. Wear headphones to hear the chime.';
+  v.hidden=CAN_VIBRATE&&!ANDROID;
+  v.textContent=ANDROID?'Android skips website vibration while your phone is on silent or Do Not Disturb, which is common in meetings. Use Test nudge during a session to check.'
+    :IOS?'iPhone does not let websites vibrate. Steady tries a light tap instead, which may not work on every iOS version.'
+    :'This browser cannot vibrate (laptops and some browsers do not support it). Use the chime or watch the screen color.';
+  c.hidden=!IOS&&!ANDROID;
+  c.textContent=IOS?'On iPhone, sound plays quietly through the earpiece while the microphone is on. Wear headphones to hear the chime.'
+    :'The chime plays at your media volume, not your ringer volume. Turn media volume up, or use an earbud so others do not hear it.';
 }
 // a two-note chime, made in the browser (no sound file)
 let actx=null;

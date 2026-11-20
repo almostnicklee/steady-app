@@ -15,7 +15,7 @@ The site is hosted free on GitHub Pages and updates automatically a minute or tw
 - **During the meeting:** a friendly face mirrors the strongest cue with a plain label (for example "Scowling: may read as frustrated"), the background shifts from navy through plum to red, and a short nudge appears (with a vibration on phones that support it).
 - **Cues:** scowl, tight lips, smirk, eye roll, raised voice, rising pitch, rushing, and holding the floor too long. Every cue is measured against your own normal from setup.
 - **Nudge options:** vibration and an optional chime, plus a **Test nudge** button during a session to check both.
-  - Android phones vibrate. Laptops cannot.
+  - Android phones vibrate, except while the phone is on silent or Do Not Disturb (Android skips website vibration then). The chime plays at media volume. Laptops cannot vibrate.
   - iPhone does not let websites vibrate. Steady tries a light tap through a Safari switch-control trick, which may not work on every iOS version.
   - On iPhone, while the microphone is on, iOS plays web sounds quietly through the earpiece, so use headphones to hear the chime.
 - **Recent sessions** can be deleted one at a time, or all at once.
