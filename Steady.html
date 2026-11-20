@@ -253,7 +253,7 @@ button:disabled{opacity:.55;cursor:default}
     <label class="set">Face cues <input type="checkbox" class="sw" id="faceCues" role="switch" checked></label>
     <label class="set">Voice cues <input type="checkbox" class="sw" id="voiceCues" role="switch" checked></label>
     <label class="set">Body cues <input type="checkbox" class="sw" id="bodyCues" role="switch" checked aria-describedby="bodyNote"></label>
-    <p class="note" id="bodyNote" style="margin:0 0 6px">A hand to your forehead, over your eyes or at your temple, and head shaking. Signals that happen together across face, body, voice and words give one combined nudge. The first session downloads an 8 MB hand model.</p>
+    <p class="note" id="bodyNote" style="margin:0 0 6px">A hand to your forehead, over your eyes or at your temple, and a clear head shake while you are listening. Signals that happen together across face, body, voice and words give one combined nudge. The first session downloads an 8 MB hand model.</p>
     <label class="set">Listen for sharp words <input type="checkbox" class="sw" id="words" role="switch" checked aria-describedby="wordsNote"></label>
     <p class="note" id="wordsNote" style="margin:0 0 6px">Catches phrases that can sound hostile, blaming, defensive, dismissive or exasperated, like "whatever", "not my fault" or "you always". Everyday words like "seriously" or "come on" count only when your face, body or voice is raised at the same time. Only your own speech is checked, while your mouth is moving. Words are turned into text on this device, checked against a list, and thrown away. Nothing is saved or sent. The first session downloads a 28 MB speech model.</p>
     <label class="set">Remember my normal <input type="checkbox" class="sw" id="rem" role="switch" aria-describedby="remNote"></label>
@@ -405,7 +405,7 @@ const CUES={
   hog:{w:.5,tau:2,hold:0,cool:60,say:['You have held the floor for a while. Ask a question.','Long turn. Check in: "What do you think?"'],label:'Long stretch of talking',short:'Long turn',fill:'#a9d9f5',ex:'Long turn',rd:'Others may want a say'},
   gesture:{w:1,tau:.2,hold:.5,cool:8,say:['Hand to your face. Lower it and take a long exhale.','Hand at your forehead. Rest your hands and breathe out slowly.'],label:'Hand to face',short:'Hand to face',fill:'#f6c58f',ex:'Hand to forehead',rd:'Can read as impatient'},
   sigh:{w:.8,tau:.1,hold:0,cool:8,say:['Audible sigh. Breathe out quietly instead.','Sigh. Pause, then say what you need.'],label:'Audible sigh',short:'Sigh',fill:'#c9d3f5',ex:'Audible sigh',rd:'Can read as impatient'},
-  shake:{w:.8,tau:.1,hold:0,cool:8,say:['Head shaking. Keep still and let them finish.','Head shake. Nod to show you are listening, then share your view.'],label:'Head shake',short:'Head shake',fill:'#b9e0f0',ex:'Head shake',rd:'Can read as disagreement'},
+  shake:{w:.8,tau:.1,hold:0,cool:15,say:['Head shaking. Keep still and let them finish.','Head shake. Nod to show you are listening, then share your view.'],label:'Head shake',short:'Head shake',fill:'#b9e0f0',ex:'Head shake',rd:'Can read as disagreement'},
   words:{w:1,tau:.15,hold:0,cool:5,say:['That may sound confrontational.'],label:'Sharp words',short:'Sharp words',fill:'#ffb3a7',ex:'Sharp words',rd:'Can come across as confrontational'}
 };
 for(const c in CUES)CUES[c].msg=CUES[c].say[0];
@@ -642,15 +642,15 @@ function wordHeard(text,t){
 }
 
 // ---- body language ----
-// head shake: at least three left-right swings of 5 degrees or more within 1.6 s, covering 10 degrees or more
+// head shake: at least four direction changes of 8 degrees or more (left-right-left-right) within 2 s, covering 16 degrees or more
 function headShake(t){
-  const h=S.yawH;while(h.length&&t-h[0][0]>1600)h.shift();
-  if(h.length<6)return false;
+  const h=S.yawH;while(h.length&&t-h[0][0]>2000)h.shift();
+  if(h.length<8)return false;
   let ext=h[0][1],dir=0,swings=0,lo=ext,hi=ext;
   for(const [,y] of h){lo=Math.min(lo,y);hi=Math.max(hi,y);
-    if(dir>=0&&y<ext-5){if(dir>0)swings++;dir=-1;ext=y}else if(dir<=0&&y>ext+5){if(dir<0)swings++;dir=1;ext=y}
+    if(dir>=0&&y<ext-8){if(dir>0)swings++;dir=-1;ext=y}else if(dir<=0&&y>ext+8){if(dir<0)swings++;dir=1;ext=y}
     else if(dir>0&&y>ext||dir<0&&y<ext)ext=y}
-  return swings>=2&&hi-lo>=10;
+  return swings>=3&&hi-lo>=16;
 }
 // hand to face: where hand points sit relative to the face (forehead, over the eyes, temple). Chin and cheek rests are ignored.
 function handFace(L,hands){
@@ -1178,7 +1178,7 @@ function evaluate(dt,t,faceOk){
   if(t-S.lastSample>500)sampleSession(v,x,t-S.selfSeen<1500);
   if($('bodyCues').checked){
     if(S.handKind&&t-S.handSince>=300){x.gesture=1;CUES.gesture.ex={forehead:'Hand to forehead',eyes:'Hand over eyes',temple:'Hand at temple'}[S.handKind]}
-    if(faceOk&&headShake(t))S.shakeAt=t;
+    if(faceOk&&headShake(t)&&t-S.selfSeen>1500)S.shakeAt=t; // only while listening; when talking, head movement is usually emphasis
     if(t-S.shakeAt<1000)x.shake=1;
     // eyes shut for over a second only counts alongside another signal
     if(faceOk&&g('eyeBlinkLeft')>.55&&g('eyeBlinkRight')>.55){if(!S.eyesT)S.eyesT=t;if(t-S.eyesT>1000)S.chanAt.eyes=t}else S.eyesT=0;
