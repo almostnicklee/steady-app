@@ -13,5 +13,6 @@ Every feature should serve that goal: noticing a reaction early, interrupting it
 - It is a self-coaching aid for the user's own use, not a tool for monitoring or evaluating other people, and not a medical or diagnostic tool.
 - Wording describes visible behavior and, at most, how it may come across in stance terms ("Brow lowered", "Can read as disagreement"), never the person's inner emotion. The user names their own feelings in the review. See README and the research report for why (accuracy, and EU AI Act emotion recognition rules).
 - Nudges cue an action that lowers arousal or carries out the user's plan ("Brow tight. Long exhale."). They never ask the user to fake or fix their face, because suppression is linked to worse memory, strained rapport and burnout.
-- Success is measured by recovery time and self-catches (the user tapping I caught it before Steady nudges), not by a calm score. Support fades as self-catches rise.
+- Success is measured by recovery time and self-catches (the user tapping I caught it before Steady nudges), not by a calm score.
+- Owner decisions: the meeting view defaults to Full color (navy to red screen plus the face), and every triggered cue nudges (no global gap or per-meeting cap). Private view and Auto fading exist only as options the user can choose.
 - Research behind these choices: `reports/Emotion signals and workplace judgment.md`.
