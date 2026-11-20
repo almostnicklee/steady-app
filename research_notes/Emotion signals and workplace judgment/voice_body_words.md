@@ -16,7 +16,7 @@ High-arousal states (hot anger, fear or panic, joy) reliably raise pitch level a
 
 **Hot vs cold anger (Banse & Scherer 1996, *JPSP* 70(3):614–636; older)**
 - The study ran digital acoustic analysis on 224 actor portrayals of 14 emotions. Emotions were chosen in "families" (for example hot vs cold anger, panic fear vs anxiety, elation vs happiness) so that intensity cues could be separated from quality cues. A discriminant analysis classified the portrayals with "remarkably high hit rates", and its confusions closely mirrored those of human listeners. — [Banse & Scherer 1996 (abstract via search)](https://psychologie.uni-bonn.de/en/department/departments/social-and-legal-psychology/uploads-fuer-die-allgemeine-i/1996bansescherer_acoustic-profiles-in-vocal-emotion-expression.pdf/@@download/file/1996BanseScherer_Acoustic%20Profiles%20in%20Vocal%20Emotion%20Expression.pdf)
-- Hot anger has a higher F0, more overall energy and more energy concentrated above 1000 Hz (that is, a flatter spectral tilt). — [secondary review summarising Banse & Scherer, via search](https://pmc.ncbi.nlm.nih.gov/articles/PMC3192404)
+- Hot anger has a higher F0, more overall energy and more energy concentrated above 1000 Hz (that is, a flatter spectral tilt). This comes from a search summary of a secondary review. The exact source page is uncertain; it was one of the results listed with [PMC3192404](https://pmc.ncbi.nlm.nih.gov/articles/PMC3192404) and the [Bänziger & Scherer Eurospeech 2003 paper](https://www.isca-archive.org/eurospeech_2003/banziger03_eurospeech.pdf).
 - Hot anger shows higher mean F0, F0 variability and F0 range. Cold anger shows *lower* mean F0 with no change in variability or range. "Hot and cold anger are externalised by very different acoustic cues." — [ICPhS 2019 paper](https://assta.org/proceedings/ICPhS2019Microsite/pdf/full-paper_599.pdf)
 
 **Anxiety (evidence conflicts)**
@@ -71,7 +71,7 @@ Humans recognise vocal emotion well above chance but imperfectly, and they do be
 
 **Acoustic confounds that look like emotion**
 - Lombard effect: in background noise, speakers involuntarily raise intensity and F0, shift energy from low to mid and high frequencies (a flatter spectral tilt) and lengthen vowels. — [Wikipedia: Lombard effect](https://en.wikipedia.org/wiki/Lombard_effect); [PMC5398925](https://pmc.ncbi.nlm.nih.gov/articles/PMC5398925/)
-- A 2008 study found that noise raised energy and mean F0 and *reduced* spectral tilt. The task affected energy and tilt more strongly than F0. — [Lu & Cooke, competing-talker study](https://personal.utdallas.edu/~hynek/citing_papers/Lu_Speaking_in_the_presence_of_a_competing_talker.pdf)
+- A 2008 study found that noise raised energy and mean F0 and *reduced* spectral tilt. The task affected energy and tilt more strongly than F0. — [Lu & Cooke 2008, competing talkers/babble/noise](https://personal.utdallas.edu/~hxb076000/citing_papers/Lu_Speech%20Production%20Modifications%20Produced%20by%20Competing%20Talkers.pdf) (attribution to this paper comes from the search summary)
 - People respond to noise by different amounts. — [PMC9913286](https://pmc.ncbi.nlm.nih.gov/articles/PMC9913286)
 
 ### Inferences
