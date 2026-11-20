@@ -66,6 +66,9 @@ tr:last-child td{border-bottom:0}
 
 /* camera: small tile during a session, large with a head outline during setup */
 .topbar{position:relative;display:flex;justify-content:flex-end;min-height:48px;margin:-6px -8px 4px 0;z-index:15}
+/* the logo sits at the true center of the screen (the bar runs 8px past the right edge of the column) */
+.logo{position:absolute;left:calc(50% - 4px);top:50%;transform:translate(-50%,-50%);margin:0;font-size:24px;font-weight:900;line-height:1;letter-spacing:-.01em;white-space:nowrap;pointer-events:none}
+.vh{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
 .acct{width:48px;height:48px;min-height:48px;padding:0;border-radius:50%;display:grid;place-items:center;font-size:28px;color:#fff;background:none}
 .acct:hover{background:var(--panel)}
 .acctMenu{position:absolute;top:52px;right:0;width:min(280px,calc(100vw - 32px));background:#0f1a4d;border-radius:20px;padding:16px;box-shadow:0 12px 32px rgba(0,0,0,.35),inset 0 0 0 2px var(--line)}
@@ -160,6 +163,7 @@ button:disabled{opacity:.55;cursor:default}
 <body>
 <main>
 <header class="topbar">
+  <p class="logo">Steady</p>
   <button class="acct" id="acct" type="button" aria-label="Account" aria-haspopup="true" aria-expanded="false" aria-controls="acctMenu"><i class="fa-solid fa-circle-user" aria-hidden="true"></i></button>
   <div class="acctMenu" id="acctMenu" hidden>
     <p class="acctWho" id="acctWho">Not signed in</p>
@@ -179,7 +183,7 @@ button:disabled{opacity:.55;cursor:default}
 
 <section id="gate" class="view on">
   <div class="hero" aria-hidden="true"><div class="face" id="gateFace"></div></div>
-  <h1>Steady</h1>
+  <h1 class="vh">Steady</h1>
   <p class="sub">Sign in to open your coach.</p>
   <form id="gform" novalidate>
     <label class="fld">Email<input type="email" id="uEmail" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" required></label>
@@ -198,7 +202,7 @@ button:disabled{opacity:.55;cursor:default}
     </svg>
     <div class="face" id="heroFace"></div>
   </div>
-  <h1>Steady</h1>
+  <h1 class="vh">Steady</h1>
   <p class="sub">A quiet coach for your meetings. It watches your face and listens to your voice, then nudges you the moment a reaction might land badly.</p>
   <button class="primary" id="go">Start a session</button>
   <div class="panel" id="psCard">
