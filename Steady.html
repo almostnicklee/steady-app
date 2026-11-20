@@ -105,6 +105,12 @@ tr:last-child td{border-bottom:0}
 #summary .panel{text-align:left}
 .sumFace{width:146px;height:146px;margin:14px auto 20px}
 
+/* sign-in */
+.fld{display:block;font-weight:700;margin:0 0 14px}
+.fld input{display:block;width:100%;margin-top:6px;min-height:54px;padding:0 18px;border-radius:18px;border:2px solid rgba(255,255,255,.55);background:var(--deep);color:#fff;font:inherit;font-weight:700}
+.link{min-height:44px;padding:0 4px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+button:disabled{opacity:.55;cursor:default}
+
 #discreet{position:fixed;inset:0;background:#000;display:none;place-items:center;z-index:20}
 #discreet.on{display:grid}
 #dot{width:44px;height:44px;border-radius:50%;background:var(--mint);box-shadow:0 0 28px var(--mint);transition:background .4s,box-shadow .4s,transform .2s}
@@ -122,7 +128,20 @@ tr:last-child td{border-bottom:0}
   </svg>
 </div>
 
-<section id="intro" class="view on">
+<section id="gate" class="view on">
+  <div class="hero" aria-hidden="true"><div class="face" id="gateFace"></div></div>
+  <h1>Steady</h1>
+  <p class="sub">Sign in to open your coach.</p>
+  <form id="gform" novalidate>
+    <label class="fld">Email<input type="email" id="uEmail" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" required></label>
+    <label class="fld">Password<input type="password" id="uPass" autocomplete="current-password" required></label>
+    <label class="set">Keep me signed in on this device <input type="checkbox" class="sw" id="uKeep" role="switch"></label>
+    <button class="primary" id="uGo" type="submit" style="margin-top:10px">Sign in</button>
+    <p class="note" style="margin-top:14px;min-height:22px"><span id="uMsg" role="status" aria-live="polite"></span> <span id="uWait" aria-hidden="true"></span></p>
+  </form>
+</section>
+
+<section id="intro" class="view">
   <div class="hero" aria-hidden="true">
     <svg class="sky" viewBox="0 0 400 200">
       <path fill="#22348d" d="M43 118C28 58 93 16 163 30C215 4 305 14 340 66C377 106 358 174 292 180C240 198 165 194 115 184C72 182 52 154 43 118Z"/>
@@ -154,12 +173,16 @@ tr:last-child td{border-bottom:0}
       </div>
     </div>
     <label class="set">Vibrate on nudges <input type="checkbox" class="sw" id="vib" role="switch" checked></label>
+    <label class="set">Chime on nudges <input type="checkbox" class="sw" id="chime" role="switch"></label>
+    <label class="set">Remember my normal <input type="checkbox" class="sw" id="rem" role="switch" aria-describedby="remNote"></label>
+    <p class="note" id="remNote" style="margin:0 0 6px"></p>
   </div>
 
   <h2>Private by design</h2>
-  <p class="note">Everything is analyzed on this device, in memory. No video or audio is recorded, saved, or uploaded. The mic will hear other people, but voice cues only count while your own mouth is moving, and nothing anyone says is transcribed or kept. Only your session scores are saved, on this device. The app's code and models download from public libraries (jsDelivr and Google); they receive an ordinary web request, never your camera or microphone.</p>
+  <p class="note">Everything is analyzed on this device, in memory. No video or audio is recorded, saved, or uploaded. The mic will hear other people, but voice cues only count while your own mouth is moving, and nothing anyone says is transcribed or kept. Your session scores and settings are saved on this device. If you turn on Remember my normal, a small profile is saved here too: numbers such as your resting brow reading, your usual pitch and pace, and your normal range for each cue. It holds no audio, video or images, it is encrypted with your sign-in, and turning the switch off deletes it. The app's code and models download from public libraries (jsDelivr and Google); they receive an ordinary web request, never your camera or microphone.</p>
   <div id="histCard" hidden><h2>Recent sessions</h2><table id="hist"></table></div>
-  <p class="note" style="margin-top:24px">Steady is a self-coaching aid for your own use. It reads visible expressions and voice level, not feelings, and its cues are estimates that will sometimes be wrong. It is not a medical or diagnostic tool, and it is not for monitoring or evaluating other people.</p>
+  <p style="margin:18px 0 0"><button class="link" id="out" type="button">Sign out</button></p>
+  <p class="note" style="margin-top:14px">Steady is a self-coaching aid for your own use. It reads visible expressions and voice level, not feelings, and its cues are estimates that will sometimes be wrong. It is not a medical or diagnostic tool, and it is not for monitoring or evaluating other people.</p>
 </section>
 
 <section id="calib" class="view">
@@ -196,6 +219,12 @@ tr:last-child td{border-bottom:0}
   <h1>Session done</h1>
   <p class="sub" id="sumLine"></p>
   <div class="panel"><h2>Nudges</h2><table id="sumTable"></table></div>
+  <div class="panel" id="remAsk" hidden>
+    <h2>Remember your normal?</h2>
+    <p class="note">Steady can save a small profile on this device: numbers such as your resting brow reading, your usual pitch and pace, and your normal range for each cue. No audio, video or images. Your baseline then fits you better each time. Turning it off on the start screen deletes it.</p>
+    <div class="row" style="margin-top:8px"><button class="primary" id="remYes" type="button" style="width:auto;font-size:16px;padding:0 12px">Save profile</button><button class="ghost" id="remNo" type="button">Not now</button></div>
+  </div>
+  <p class="note" id="remDone" hidden>Saved on this device. You can turn it off on the start screen.</p>
   <button class="primary" id="again">Back to start</button>
 </section>
 </main>
@@ -272,8 +301,9 @@ function resetState(){
     learn:{db:[],pitch:[],alpha:[],secs:0,peaks:0},learnF:{brow:[],frown:[],press:[],sneer:[],asym:[],up:[],yaw:[],nod:[]},
     base:null,bad:{},hold:{},cool:{},counts:{},heat:0,score:100,scores:[],lastSample:0,t0:0,alertUntil:0,
     talk:new Float32Array(90),sec:-1,share:0,dL:0,st:0,top:null,topV:0,alignT:0,frameT0:0,calT0:0,hiddenAt:0,themeT:0,
-    fp:{...CALM},ff:[255,217,120],sig:''});
-  for(const k in CUES){S.bad[k]=0;S.hold[k]=0;S.cool[k]=0;S.counts[k]=0}
+    fp:{...CALM},ff:[255,217,120],sig:'',off:{},prof:null,mute:0,mins:0,
+    ses:{brow:[],frown:[],press:[],sneer:[],asym:[],f0:[],rate:[],x:{}}});
+  for(const k in CUES){S.bad[k]=0;S.hold[k]=0;S.cool[k]=0;S.counts[k]=0;S.off[k]=0;S.ses.x[k]=[]}
 }
 
 // Silero voice activity model: one 32 ms chunk in, the chance that it contains speech out
@@ -298,7 +328,7 @@ async function onAudio(x){
   S.db=db;S.noise=db<S.noise?ema(S.noise,db,.1):ema(S.noise,db,.0015);
   let p=-1;
   if(vad){try{p=await vadRun(x)}catch(e){console.warn(e);vad=null}}
-  const speech=p<0?db>S.noise+10:p>(S.speech?.35:.5);
+  const speech=now>=S.mute&&(p<0?db>S.noise+10:p>(S.speech?.35:.5)); // S.mute: skip our own chime
   S.speech=speech;S.vp=p;
   const live=S.mode==='live',cal=S.mode==='calib';
   const faceOn=!!face&&hasVideo,faceOk=faceOn&&now-S.faceSeen<1200;
@@ -331,30 +361,74 @@ async function onAudio(x){
   if(live){
     const sec=Math.floor((now-S.t0)/1000);if(sec!==S.sec){S.sec=sec;S.talk[sec%90]=0}
     if(self)S.talk[sec%90]+=.032;
-    if(A&&A.secs>=8)S.base.voice=voiceBase(A); // stayed quiet in setup: learn the voice from the first sentences
+    if(A&&A.secs>=8)S.base.voice=voiceWith(voiceBase(A),S.prof); // stayed quiet in setup: learn the voice from the first sentences
   }
 }
-// How far each cue has drifted from your own normal, from 0 (none) to 1 (a lot). k is the sensitivity setting.
-function faceRaw(v,F,k,raw){
+// How far each cue has drifted from your own normal: 0 is none, .5 earns a nudge, 1 is a lot (before sensitivity).
+function faceDrive(v,F,x){
   const soft=clamp(1-(v.smile-.35)*3); // a broad smile is not a scowl
-  raw.scowl=clamp(((v.brow-F.brow)*1.6+(v.frown-F.frown)*2)*k)*soft;
-  raw.tense=clamp((v.press-F.press)*1.8*k)*soft;
-  raw.sneer=clamp(((v.sneer-F.sneer)*2.5+Math.max(0,Math.abs(v.asym-F.asym)-.18)*2.5)*k);
-  raw.roll=clamp((v.up-Math.max(.45,F.up+.3))*3*k); // well above where your eyes normally sit for this camera angle
+  x.scowl=clamp((v.brow-F.brow)*1.6+(v.frown-F.frown)*2,0,1.5)*soft;
+  x.tense=Math.max(0,(v.press-F.press)*1.8)*soft;
+  x.sneer=Math.max(0,(v.sneer-F.sneer)*2.5+Math.max(0,Math.abs(v.asym-F.asym)-.18)*2.5);
+  x.roll=Math.max(0,(v.up-Math.max(.45,F.up+.3))*3); // well above where your eyes normally sit for this camera angle
 }
-function voiceRaw(t,k,raw){
+function voiceDrive(t,x){
   const V=S.base.voice,talking=t-S.selfSeen<1500;
   if(V&&talking){
     if(S.lvl.length>=20){ // louder AND sharper reads as a raised voice; louder alone is often just leaning in
       const dA=V.alpha!=null&&S.alphas.length>=8?clamp(med(S.alphas)-V.alpha,-3,8):0;
-      S.dL=topMean(S.lvl)-V.db;S.dA=dA;raw.loud=clamp((.5*S.dL+.8*dA-3.5)/5*k);
+      S.dL=topMean(S.lvl)-V.db;S.dA=dA;x.loud=(.5*S.dL+.8*dA-3.5)/5;
     }
-    if(V.pitch&&S.f0s.length>=10){S.st=12*Math.log2(med(S.f0s)/V.pitch);raw.pitch=clamp((S.st-2.5)/4*k)}
-    if(V.rate&&S.rate)raw.fast=clamp((S.rate/V.rate-1.15)/.3*k); // the pace estimate is rough, so this cue is deliberately slow to trigger
+    if(V.pitch&&S.f0s.length>=10){S.st=12*Math.log2(med(S.f0s)/V.pitch);x.pitch=(S.st-2.5)/4}
+    if(V.rate&&S.rate)x.fast=(S.rate/V.rate-1.15)/.3; // the pace estimate is rough, so this cue is deliberately slow to trigger
   }
   const el=(t-S.t0)/1000;let tk=0;for(let i=0;i<90;i++)tk+=S.talk[i];
   S.share=el>5?clamp(tk/Math.min(90,el)):0; // share of the last 90 seconds you spent talking
-  if(el>45)raw.hog=clamp((S.share-.55)/.3*k);
+  if(el>45)x.hog=(S.share-.55)/.3;
+}
+// apply your personal allowance (learned from earlier sessions) and the sensitivity setting k
+function rawFrom(x,k){const raw={};for(const c in CUES)raw[c]=clamp(((x[c]||0)-S.off[c])*k);return raw}
+
+// ---- personal profile: a few dozen numbers learned across sessions. No audio, video or images. ----
+const FACE5=['brow','frown','press','sneer','asym'];
+const pct=(a,q)=>{const b=Array.from(a).sort((x,y)=>x-y);return b.length?b[Math.min(b.length-1,Math.floor(q*b.length))]:0};
+// blend today's setup with what earlier sessions learned about your resting face and usual voice
+function faceWith(F,P){
+  if(F&&P&&P.n&&P.face)for(const k of FACE5)if(P.face[k]!=null)F[k]=lerp(F[k],P.face[k],.3);
+  return F;
+}
+function voiceWith(V,P){
+  if(V&&P&&P.n&&P.voice){
+    if(P.voice.pitch&&V.pitch)V.pitch=Math.exp(lerp(Math.log(V.pitch),Math.log(P.voice.pitch),.5));
+    if(P.voice.rate)V.rate=lerp(V.rate,P.voice.rate,.5);
+  }
+  return V;
+}
+// your normal range: a cue that often runs a little high for you has to go a little higher to count (capped, so it never switches a cue off)
+function offsets(P){for(const c in CUES)S.off[c]=P&&P.n&&P.range&&P.range[c]!=null?clamp(P.range[c]-.25,0,.15):0}
+// called twice a second during a session: v is the face reading (or null), x the cue drives
+function sampleSession(v,x,talking){
+  const q=S.ses;
+  if(v){for(const k of FACE5)q[k].push(v[k]);for(const c of ['scowl','tense','sneer','roll'])q.x[c].push(Math.max(0,x[c]))}
+  if(talking&&S.base.voice){
+    if(S.f0s.length>=10)q.f0.push(med(S.f0s));
+    if(S.rate)q.rate.push(S.rate);
+    for(const c of ['loud','pitch','fast'])q.x[c].push(Math.max(0,x[c]));
+  }
+}
+// fold one finished session (at least a minute long) into the profile
+function learn(P,mins){
+  const q=S.ses,mix=(a,b)=>a==null?b:lerp(a,b,.25);
+  P=P&&P.v===1?P:{v:1,n:0,t:0,face:{},voice:{},range:{}};
+  if(!(mins>=1))return P;
+  let got=false;
+  if(q.brow.length>=60){for(const k of FACE5)P.face[k]=mix(P.face[k],med(q[k]));got=true}
+  if(q.f0.length>=20){P.voice.pitch=mix(P.voice.pitch,med(q.f0));got=true}
+  if(q.rate.length>=20)P.voice.rate=mix(P.voice.rate,med(q.rate));
+  for(const c in q.x)if(q.x[c].length>=40)P.range[c]=mix(P.range[c],pct(q.x[c],.9));
+  if(S.base&&S.base.mthrCal)P.mthr=mix(P.mthr,S.base.mthr);
+  if(got){P.n++;P.t=Date.now()}
+  return P;
 }
 // Advance every cue by one frame. Returns the cues that have just earned a nudge.
 function stepCues(dt,t,raw){
@@ -375,7 +449,7 @@ function stepCues(dt,t,raw){
 /*CORE-END*/
 
 const $=id=>document.getElementById(id);
-const VIEWS=['intro','calib','live','summary'];
+const VIEWS=['gate','intro','calib','live','summary'];
 const show=v=>{VIEWS.forEach(x=>$(x).classList.toggle('on',x===v));scrollTo(0,0)};
 const SENS={low:.7,med:1,high:1.35};
 const sens=()=>SENS[document.querySelector('input[name=sens]:checked')?.value]||1;
@@ -544,7 +618,7 @@ function guide(faceOk){
 const status=s=>{const e=$('cstat');if(e.textContent!==s)e.textContent=s};
 function camMode(m){const c=$('cam');c.hidden=m==='off';c.classList.toggle('big',m==='big')}
 async function start(){
-  if(busy||running)return;busy=true;clearTimeout(demoT);endPreview();
+  if(!pkey||busy||running)return;busy=true;clearTimeout(demoT);endPreview();
   resetState();
   show('calib');$('cskip').hidden=true;$('ccount').className='count';$('guide').classList.remove('ok');
   status('Asking for camera and microphone...');
@@ -574,8 +648,10 @@ function finishCal(t){
   const C=S.cal,mS=med(C.mouthS),mI=med(C.mouthI),seen=C.mouthS.length>=20;
   // only trust the setup voice if a mouth was seen moving while speech was heard (or there was no face to check)
   const spoke=C.secs>=4&&(!seen||mS>Math.max(.15,2*mI));
-  S.base={voice:spoke?voiceBase(C):null,fb:faceBase(C),
-    mthr:spoke&&seen?clamp(.4*mS,Math.max(.1,1.5*mI),.7):clamp(3*Math.max(mI,seen?mS:0),.15,MTHR)};
+  const use=S.prof=$('rem').checked?profile:null,cal=spoke&&seen; // the saved profile, if you asked Steady to remember
+  S.base={voice:voiceWith(spoke?voiceBase(C):null,use),fb:faceWith(faceBase(C),use),mthrCal:cal,
+    mthr:cal?clamp(.4*mS,Math.max(.1,1.5*mI),.7):use&&use.mthr?use.mthr:clamp(3*Math.max(mI,seen?mS:0),.15,MTHR)};
+  offsets(use);
   S.mode='live';S.t0=t;S.sec=-1;S.heat=0;S.score=100;S.lvl.length=S.f0s.length=S.alphas.length=0;
   $('liveNote').textContent=S.note||(hasAudio&&!S.base.voice?'Steady will learn your normal voice from your first few sentences.':'Bars fill as a cue drifts from your normal.');
   $('alert').classList.remove('hot');$('alert').textContent='Looking steady.';
@@ -605,13 +681,14 @@ function tick(t){
 }
 
 function evaluate(dt,t,faceOk){
-  const B=S.base,k=sens(),raw={scowl:0,tense:0,sneer:0,roll:0,loud:0,pitch:0,fast:0,hog:0};
-  if(!B.fb&&faceOk){collectFace(S.learnF);if(S.learnF.brow.length>=90)B.fb=faceBase(S.learnF)}
+  const B=S.base,x={scowl:0,tense:0,sneer:0,roll:0,loud:0,pitch:0,fast:0,hog:0};
+  if(!B.fb&&faceOk){collectFace(S.learnF);if(S.learnF.brow.length>=90)B.fb=faceWith(faceBase(S.learnF),S.prof)}
   const F=B.fb,turned=!!F&&S.pose&&(Math.abs(S.yaw-F.yaw)>32||Math.abs(S.nod-F.nod)>28),seeing=faceOk&&!!F&&!turned;
-  if(seeing)faceRaw(faceVals(),F,k,raw); // face cues are paused while your head is turned away
-  voiceRaw(t,k,raw);
-
-  for(const c of stepCues(dt,t,raw))fire(c,t);
+  const v=seeing?faceVals():null;
+  if(v)faceDrive(v,F,x); // face cues are paused while your head is turned away
+  voiceDrive(t,x);
+  if(t-S.lastSample>500)sampleSession(v,x,t-S.selfSeen<1500);
+  for(const c of stepCues(dt,t,rawFrom(x,sens())))fire(c,t);
   setBg(Math.pow(clamp((S.heat-.05)/.6),.85)); // one clear cue is already well on the way to red
   drawLive(dt,faceOk);
   if(frame%3===0)render(t,faceOk,seeing,turned);
@@ -621,6 +698,7 @@ function fire(c,t){
   S.alertUntil=t+4000;
   const a=$('alert');a.textContent=CUES[c].msg;a.classList.add('hot');
   if($('vib').checked&&navigator.vibrate)navigator.vibrate([120,80,120]);
+  if($('chime').checked)chime();
   const d=$('dot');d.style.transform='scale(1.6)';setTimeout(()=>d.style.transform='',300);
 }
 
@@ -675,7 +753,28 @@ function end(){
     h.unshift({d:new Date().toLocaleDateString(),m:+mins.toFixed(1),a:avg,top:top?CUES[top].label:'None'});
     localStorage.setItem('steady.history',JSON.stringify(h.slice(0,10)));
   }catch(e){}
+  S.mins=mins;
+  if($('rem').checked){profile=learn(profile,mins);saveProfile();remNote()}
+  $('remDone').hidden=true;$('remAsk').hidden=$('rem').checked||asked;
   S.mode='done';show('summary');
+}
+
+// a soft two-note chime, made in the browser (no sound file)
+let actx=null;
+function chime(){
+  try{
+    const a=ctx&&ctx.state==='running'?ctx:(actx||(actx=new (window.AudioContext||window.webkitAudioContext)()));
+    if(a.state==='suspended')a.resume();
+    const t0=a.currentTime+.03;
+    for(const [f,d] of [[784,0],[587.3,.17]]){
+      const o=a.createOscillator(),o2=a.createOscillator(),g=a.createGain(),g2=a.createGain();
+      o.frequency.value=f;o2.frequency.value=f*2;g2.gain.value=.22;
+      g.gain.setValueAtTime(.0001,t0+d);g.gain.exponentialRampToValueAtTime(.16,t0+d+.02);g.gain.exponentialRampToValueAtTime(.0001,t0+d+.7);
+      o.connect(g);o2.connect(g2);g2.connect(g);g.connect(a.destination);
+      o.start(t0+d);o2.start(t0+d);o.stop(t0+d+.75);o2.stop(t0+d+.75);
+    }
+    S.mute=performance.now()+950; // do not let the microphone count the chime as your voice
+  }catch(e){}
 }
 
 function renderHist(){
@@ -704,34 +803,143 @@ function preview(btn){
   $('heroFace').innerHTML=faceSVG(EXPR[c],CUES[c].fill);setBg(.8);theme();
   $('demo').classList.add('hot');$('demo').textContent=CUES[c].msg;
   if($('vib').checked&&navigator.vibrate)navigator.vibrate([120,80,120]);
+  if($('chime').checked)chime();
   demoT=setTimeout(endPreview,2800);
 }
 
 resetState();
-$('heroFace').innerHTML=faceSVG(CALM,MOONS);
-$('cues').innerHTML=Object.keys(CUES).map(c=>`<button class="cue" data-c="${c}"><span class="face">${faceSVG(EXPR[c],CUES[c].fill)}</span>${CUES[c].short}</button>`).join('');
-$('cues').onclick=e=>{const b=e.target.closest('.cue');if(b)preview(b)};
-$('go').onclick=start;
-$('stop').onclick=end;
-$('cback').onclick=end;
-$('cskip').onclick=()=>{if(S.mode==='frame')beginCal(performance.now())};
-$('again').onclick=()=>{renderHist();show('intro')};
-const discreet=on=>{
-  $('discreet').classList.toggle('on',on);
-  if(on){$('discreet').focus();document.documentElement.requestFullscreen?.().catch(()=>{})}
-  else{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});$('disc').focus()}
-};
-$('disc').onclick=()=>discreet(true);
-$('discreet').onclick=()=>discreet(false);
-$('discreet').onkeydown=e=>{if(e.key==='Escape'||e.key==='Enter'||e.key===' '){e.preventDefault();discreet(false)}};
-document.addEventListener('visibilitychange',async()=>{
-  if(!running)return;
-  if(document.visibilityState==='hidden'){S.hiddenAt=performance.now();return}
-  try{wake=await navigator.wakeLock?.request('screen')}catch(e){}
-  const gone=S.hiddenAt?Math.round((performance.now()-S.hiddenAt)/1000):0;S.hiddenAt=0;lastT=0;
-  if(S.mode==='live'&&gone>=3)$('liveNote').textContent=`Steady paused for ${gone} seconds while this window was hidden. Keep it in view during your meeting.`;
-});
-renderHist();
+
+// ---- small things kept in this browser: settings, sign-in, saved profile ----
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+let pkey=null,profile=null,asked=false,booted=false,lockT=0,mem={n:0,until:0};
+function saveSet(){store.set('steady.settings',{sens:document.querySelector('input[name=sens]:checked')?.value||'med',vib:$('vib').checked,chime:$('chime').checked,rem:$('rem').checked,asked})}
+function loadSet(){
+  const q=store.get('steady.settings',{})||{};
+  if(SENS[q.sens])document.querySelector(`input[name=sens][value=${q.sens}]`).checked=true;
+  if('vib' in q)$('vib').checked=!!q.vib;
+  $('chime').checked=!!q.chime;$('rem').checked=!!q.rem;asked=!!q.asked;
+}
+function remNote(){
+  const on=$('rem').checked,n=profile&&profile.n;
+  $('remNote').textContent=!on?'Off. Nothing about your face or voice is kept between sessions.'
+    :n?`Learned from ${n} session${n===1?'':'s'}. Saved on this device only. Turn off to delete it.`
+    :'On. Steady starts learning from your next session of a minute or more. Turn off to delete it.';
+}
+
+// ---- sign-in. The check runs in this browser, so it is a basic lock: it keeps casual visitors out, nothing more. ----
+// Only a slow, salted one-way check value is stored here, never the email or password.
+const AUTH={salt:'fc62e5d8134c1c7931510f552f3814bb',iter:3000000,check:'ffcbcb042aeac8207564a8cff7cacb5d315fe998c07bbb1e4c4fc798a80603e3'};
+const enc=new TextEncoder(),hex=b=>Array.from(new Uint8Array(b),v=>v.toString(16).padStart(2,'0')).join(''),unhex=h=>Uint8Array.from(h.match(/../g)||[],v=>parseInt(v,16));
+const join=(a,b)=>{const o=new Uint8Array(a.length+b.length);o.set(a);o.set(b,a.length);return o};
+const sha=async(label,bytes)=>new Uint8Array(await crypto.subtle.digest('SHA-256',join(enc.encode(label),bytes)));
+async function derive(email,pass){
+  const k=await crypto.subtle.importKey('raw',enc.encode(pass),'PBKDF2',false,['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:join(unhex(AUTH.salt),enc.encode(email.trim().toLowerCase())),iterations:AUTH.iter},k,256));
+}
+async function unlock(master){
+  if(hex(await sha('steady-check',master))!==AUTH.check)return false;
+  pkey=await crypto.subtle.importKey('raw',await sha('steady-profile',master),'AES-GCM',false,['encrypt','decrypt']);
+  await loadProfile();
+  return true;
+}
+// the saved profile is encrypted with a key that only a correct sign-in can rebuild
+async function loadProfile(){
+  profile=null;
+  try{
+    const j=store.get('steady.profile',null);if(!j||!pkey)return;
+    profile=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:unhex(j.iv)},pkey,unhex(j.ct))));
+  }catch(e){profile=null}
+}
+async function saveProfile(){
+  try{
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    store.set('steady.profile',{iv:hex(iv),ct:hex(await crypto.subtle.encrypt({name:'AES-GCM',iv},pkey,enc.encode(JSON.stringify(profile))))});
+  }catch(e){}
+}
+// wrong tries slow down: a short pause each time, then a lockout that doubles from 30 seconds up to 15 minutes
+const tries=()=>{const t=store.get('steady.tries',mem)||mem;return t.n>=mem.n?t:mem};
+function failed(){const t=tries();t.n++;t.until=Date.now()+(t.n<5?2000:Math.min(9e5,3e4*2**(t.n-5)));mem={n:t.n,until:t.until};store.set('steady.tries',mem)}
+function gateTick(){
+  clearTimeout(lockT);
+  const left=Math.ceil((tries().until-Date.now())/1000);
+  $('uGo').disabled=left>0;
+  $('uWait').textContent=left>2?`${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`:'';
+  if(left>0)lockT=setTimeout(gateTick,500);
+  else if($('uMsg').textContent.startsWith('Too many'))$('uMsg').textContent='';
+}
+async function signIn(e){
+  e.preventDefault();
+  if($('uGo').disabled||Date.now()<tries().until)return;
+  const email=$('uEmail').value,pass=$('uPass').value,msg=$('uMsg');
+  if(!email.trim()||!pass){msg.textContent='Enter your email and password.';return}
+  if(!(window.crypto&&crypto.subtle)){msg.textContent='Sign-in needs a secure (https) page.';return}
+  $('uGo').disabled=true;msg.textContent='Checking...';
+  let m=null,ok=false;
+  try{m=await derive(email,pass);ok=await unlock(m)}catch(err){console.warn(err)}
+  if(!ok){
+    failed();$('uPass').value='';
+    msg.textContent=tries().n>=5?'Too many tries. Sign-in is paused for a while.':'That email and password do not match.';
+    gateTick();$('uPass').focus();return;
+  }
+  mem={n:0,until:0};store.del('steady.tries');
+  const tok=hex(m);
+  try{sessionStorage.setItem('steady.auth',tok)}catch(err){}
+  if($('uKeep').checked)store.set('steady.auth',tok);else store.del('steady.auth');
+  $('uPass').value='';msg.textContent='';$('uGo').disabled=false;
+  enter();
+}
+function signOut(){
+  if(running||busy)end();
+  try{sessionStorage.removeItem('steady.auth')}catch(e){}
+  store.del('steady.auth');pkey=null;profile=null;
+  show('gate');gateTick();$('uEmail').focus();
+}
+function enter(){boot();loadSet();remNote();renderHist();show('intro')}
+
+function boot(){
+  if(booted)return;booted=true;
+  $('heroFace').innerHTML=faceSVG(CALM,MOONS);
+  $('cues').innerHTML=Object.keys(CUES).map(c=>`<button class="cue" data-c="${c}"><span class="face">${faceSVG(EXPR[c],CUES[c].fill)}</span>${CUES[c].short}</button>`).join('');
+  $('cues').onclick=e=>{const b=e.target.closest('.cue');if(b)preview(b)};
+  $('go').onclick=start;
+  $('stop').onclick=end;
+  $('cback').onclick=end;
+  $('cskip').onclick=()=>{if(S.mode==='frame')beginCal(performance.now())};
+  $('again').onclick=()=>{renderHist();show('intro')};
+  const discreet=on=>{
+    $('discreet').classList.toggle('on',on);
+    if(on){$('discreet').focus();document.documentElement.requestFullscreen?.().catch(()=>{})}
+    else{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});$('disc').focus()}
+  };
+  $('disc').onclick=()=>discreet(true);
+  $('discreet').onclick=()=>discreet(false);
+  $('discreet').onkeydown=e=>{if(e.key==='Escape'||e.key==='Enter'||e.key===' '){e.preventDefault();discreet(false)}};
+  document.addEventListener('visibilitychange',async()=>{
+    if(!running)return;
+    if(document.visibilityState==='hidden'){S.hiddenAt=performance.now();return}
+    try{wake=await navigator.wakeLock?.request('screen')}catch(e){}
+    const gone=S.hiddenAt?Math.round((performance.now()-S.hiddenAt)/1000):0;S.hiddenAt=0;lastT=0;
+    if(S.mode==='live'&&gone>=3)$('liveNote').textContent=`Steady paused for ${gone} seconds while this window was hidden. Keep it in view during your meeting.`;
+  });
+  $('out').onclick=signOut;
+  document.querySelectorAll('input[name=sens]').forEach(r=>{r.onchange=saveSet});
+  $('vib').onchange=saveSet;
+  $('chime').onchange=()=>{saveSet();if($('chime').checked)chime()};
+  $('rem').onchange=()=>{if(!$('rem').checked){profile=null;store.del('steady.profile')}saveSet();remNote()};
+  $('remYes').onclick=()=>{$('rem').checked=true;asked=true;saveSet();profile=learn(profile,S.mins);saveProfile();remNote();$('remAsk').hidden=true;$('remDone').hidden=false};
+  $('remNo').onclick=()=>{asked=true;saveSet();$('remAsk').hidden=true};
+}
+$('gateFace').innerHTML=faceSVG(CALM,MOONS);
+$('gform').onsubmit=signIn;
+(async()=>{
+  let tok=null;
+  try{tok=sessionStorage.getItem('steady.auth')}catch(e){}
+  tok=tok||store.get('steady.auth',null);
+  if(typeof tok==='string'&&/^[0-9a-f]{64}$/.test(tok)&&window.crypto&&crypto.subtle){
+    try{if(await unlock(unhex(tok))){enter();return}}catch(e){}
+  }
+  gateTick();
+})();
 }
 </script>
 </body></html>
