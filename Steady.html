@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10131c">
+<title>Steady</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE calm, private, coach-like
+   IDEA a pulse monitor for how you come across
+   PICTURE one large live score ring
+   COLOUR night ink ground, calm blue, amber and red only when something slips
+   TYPE Figtree; LAYOUT one column for a phone held upright */
+:root{--bg:#10131c;--card:#181c28;--ink:#eef1f7;--mute:#9aa3b5;--calm:#7cc4ff;--warn:#ffb547;--bad:#ff5d5d;--line:#262b3b}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overflow-x:clip}
+main{max-width:520px;margin:0 auto;padding:20px 18px 48px}
+h1{font-size:36px;line-height:1.05;margin:8px 0 6px;font-weight:800}
+h2{font-size:18px;margin:0 0 6px}
+.sub{color:var(--mute);margin:0 0 16px}
+.view{display:none}.view.on{display:block}
+button{font:inherit;font-weight:600;border:0;border-radius:14px;min-height:50px;padding:0 18px;cursor:pointer}
+.primary{background:var(--calm);color:#06121f;width:100%;font-size:17px}
+.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:14px 0}
+ol,ul{padding-left:20px;margin:6px 0;color:var(--mute)}li{margin:4px 0}
+.ring{position:relative;width:min(68vw,250px);aspect-ratio:1;margin:6px auto 10px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:14}
+#arc{stroke:var(--calm);stroke-linecap:round;transition:stroke-dashoffset .3s,stroke .4s}
+.num{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.num b{font-size:clamp(56px,18vw,80px);font-weight:800;line-height:1}
+.num small{color:var(--mute);font-size:14px}
+.cam{position:fixed;top:12px;right:12px;width:78px;height:104px;border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#000;z-index:5}
+.cam video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.alert{min-height:66px;border-radius:16px;padding:14px 16px;font-weight:600;font-size:18px;background:var(--card);border:1px solid var(--line);transition:background .3s,border-color .3s}
+.alert.hot{background:#3a2112;border-color:var(--warn);color:#ffe2b8}
+.meters{display:grid;gap:12px}
+.m{display:grid;grid-template-columns:5.6em minmax(0,1fr) 3.4em;align-items:center;gap:10px;font-size:14px;color:var(--mute)}
+.bar{height:10px;border-radius:6px;background:#0b0e15;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--calm);transition:width .25s,background .25s}
+.m span:last-child{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.row>*{flex:1 1 140px}
+.read{font-size:20px;line-height:1.45;font-weight:600;margin:8px 0}
+.count{font-size:64px;font-weight:800;text-align:center;line-height:1.1}
+#discreet{position:fixed;inset:0;background:#000;display:none;place-items:center;z-index:20}
+#discreet.on{display:grid}
+#dot{width:44px;height:44px;border-radius:50%;background:var(--calm);box-shadow:0 0 28px var(--calm);transition:background .4s,box-shadow .4s,transform .2s}
+#dhint{position:absolute;bottom:24px;color:#555;font-size:13px}
+label.t{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:46px}
+select{font:inherit;font-size:16px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px}
+input[type=checkbox]{width:24px;height:24px;accent-color:var(--calm)}
+.note{font-size:13px;color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:15px}td{padding:8px 0;border-bottom:1px solid var(--line)}td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head>
+<body>
+<div class="cam" id="cam" hidden><video id="vid" playsinline muted></video></div>
+<main>
+
+<section id="intro" class="view on">
+  <h1>Steady</h1>
+  <p class="sub">A live coach for how you come across in conversation. It watches your face and listens to your voice, then warns you before a reaction lands badly.</p>
+  <button class="primary" id="go">Start a session</button>
+  <div class="card">
+    <h2>How to use it</h2>
+    <ol>
+      <li>Prop the phone up facing you, about arm's length away, with your face in good light.</li>
+      <li>Do the 15 second calibration so it learns your normal face and voice.</li>
+      <li>Have your conversation. Glance at the score, or switch to Discreet and feel a buzz when something slips.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <label class="t">Sensitivity
+      <select id="sens"><option value="low">Low</option><option value="med" selected>Medium</option><option value="high">High</option></select></label>
+    <label class="t">Vibrate on warnings <input type="checkbox" id="vib" checked></label>
+  </div>
+  <div class="card">
+    <h2>Privacy</h2>
+    <p class="note">Everything is analyzed on this phone, in memory. No video or audio is recorded, saved, or uploaded. The mic will hear the other person, but voice cues only count while your own mouth is moving. Only session scores are kept, on this phone.</p>
+  </div>
+  <div class="card" id="histCard" hidden><h2>Recent sessions</h2><table id="hist"></table></div>
+  <p class="note">Steady is a practice aid, not a medical or diagnostic tool. Cues are estimates and will sometimes be wrong.</p>
+</section>
+
+<section id="calib" class="view">
+  <h1>Calibrating</h1>
+  <p class="sub" id="cstat">Getting ready...</p>
+  <div class="card">
+    <p class="note">Keep a relaxed, neutral face and read this out loud in your normal voice. When you finish, keep talking about your day until the timer ends.</p>
+    <p class="read">"Yesterday I walked to the corner store, picked up a few things for dinner, and chatted with a neighbor about the weather and our plans for the weekend."</p>
+  </div>
+  <div class="count" id="ccount">15</div>
+  <button class="ghost" id="cback" hidden style="width:100%">Back</button>
+</section>
+
+<section id="live" class="view">
+  <div class="ring">
+    <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" stroke="#0b0e15"/><circle id="arc" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="0"/></svg>
+    <div class="num"><b id="score">100</b><small id="slabel">Steady</small></div>
+  </div>
+  <div class="alert" id="alert" role="status" aria-live="polite">Looking steady.</div>
+  <div class="card meters">
+    <div class="m"><span>Face</span><div class="bar"><i id="bFace"></i></div><span id="vFace">ok</span></div>
+    <div class="m"><span>Volume</span><div class="bar"><i id="bLoud"></i></div><span id="vLoud">0 dB</span></div>
+    <div class="m"><span>Pitch</span><div class="bar"><i id="bPitch"></i></div><span id="vPitch">0%</span></div>
+    <div class="m"><span>Pace</span><div class="bar"><i id="bFast"></i></div><span id="vFast">1.0x</span></div>
+    <div class="m"><span>Talk share</span><div class="bar"><i id="bHog"></i></div><span id="vHog">0%</span></div>
+    <p class="note" id="liveNote" style="margin:0">Bars fill as a cue drifts from your baseline.</p>
+  </div>
+  <div class="row"><button class="ghost" id="disc">Discreet mode</button><button class="ghost" id="stop">End session</button></div>
+</section>
+
+<section id="summary" class="view">
+  <h1>Session done</h1>
+  <p class="sub" id="sumLine"></p>
+  <div class="card"><h2>Warnings</h2><table id="sumTable"></table></div>
+  <button class="primary" id="again">Back to start</button>
+</section>
+</main>
+<div id="discreet"><div id="dot"></div><div id="dhint">Tap anywhere to exit</div></div>
+
+<script type="module">
+{
+const $=id=>document.getElementById(id);
+const VIEWS=['intro','calib','live','summary'];
+const show=v=>VIEWS.forEach(x=>$(x).classList.toggle('on',x===v));
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const ema=(p,x,a)=>p+(x-p)*a;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const med=a=>{if(!a.length)return 0;const b=[...a].sort((x,y)=>x-y);return b[b.length>>1]};
+const SENS={low:.7,med:1,high:1.35};
+const CUES={
+  scowl:{w:1,msg:'Brow is tightening. Soften your face.',label:'Frown or scowl'},
+  tense:{w:.6,msg:'Lips pressed tight. Relax your jaw.',label:'Tight lips'},
+  sneer:{w:1,msg:'Possible sneer or smirk. Reset to neutral.',label:'Sneer or smirk'},
+  roll:{w:1.2,msg:'Eyes rolling up. Hold steady eye contact.',label:'Eye roll'},
+  loud:{w:1,msg:'Volume rising. Bring it down a notch.',label:'Getting loud'},
+  pitch:{w:.7,msg:'Pitch climbing. Slow exhale, lower your voice.',label:'Pitch rising'},
+  fast:{w:.7,msg:'Speeding up. Slow down and pause.',label:'Talking fast'},
+  hog:{w:.5,msg:'You have done most of the talking. Ask a question.',label:'Most of the talking'}
+};
+const MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+const MP='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+let stream=null,video=$('vid'),ctx=null,analyser=null,buf=null,face=null,lastVT=-1,wake=null,running=false,frame=0,lastT=0;
+const S={};
+
+async function loadFace(){
+  let m=null;
+  for(const u of [MP+'/vision_bundle.mjs',MP]){try{m=await import(u);break}catch(e){console.warn(e)}}
+  if(!m)return false;
+  try{
+    const fs=await m.FilesetResolver.forVisionTasks(MP+'/wasm');
+    const o=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:true});
+    try{face=await m.FaceLandmarker.createFromOptions(fs,o('GPU'))}catch(e){face=await m.FaceLandmarker.createFromOptions(fs,o('CPU'))}
+    return true;
+  }catch(e){console.warn(e);face=null;return false}
+}
+
+function resetState(){
+  Object.assign(S,{mode:'calib',noise:-55,db:-90,pitch:0,mouth:0,prevJaw:0,voiced:false,self:false,
+    env:-90,valley:-90,rising:false,lastPeak:0,peaks:[],hist:[],bs:{},faceSeen:-1e9,rate:0,share:0,voiceSecs:0,
+    cal:{db:[],pitch:[],mouth:[],brow:[],frown:[],press:[],sneer:[],peaks:0,selfSecs:0},
+    base:null,bad:{},hold:{},cool:{},counts:{},score:100,scores:[],lastSample:0,t0:0,alertUntil:0});
+  for(const k in CUES){S.bad[k]=0;S.hold[k]=0;S.cool[k]=0;S.counts[k]=0}
+}
+
+function pitchOf(b,sr){
+  const n=b.length>>1,x=new Float32Array(n);
+  for(let i=0;i<n;i++)x[i]=(b[2*i]+b[2*i+1])*.5;
+  const r=sr/2,minL=Math.floor(r/400),maxL=Math.min(Math.floor(r/70),n>>1);
+  let e0=0;for(let i=0;i<n;i++)e0+=x[i]*x[i];
+  if(e0<1e-5)return 0;
+  let best=0,bl=0;
+  for(let L=minL;L<=maxL;L++){
+    let c=0;for(let i=0;i<n-L;i++)c+=x[i]*x[i+L];
+    const nc=c/(e0*(n-L)/n);
+    if(nc>best){best=nc;bl=L}
+  }
+  return best>.55&&bl?r/bl:0;
+}
+
+const g=k=>S.bs[k]||0;
+
+function loop(t){
+  if(!running)return;
+  const dt=lastT?Math.min(.1,(t-lastT)/1000):1/60;lastT=t;frame++;
+  analyser.getFloatTimeDomainData(buf);
+  let s=0;for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];
+  const db=10*Math.log10(s/buf.length+1e-10);
+  S.db=ema(S.db,db,.3);
+  S.noise=db<S.noise?ema(S.noise,db,.05):ema(S.noise,db,.0008);
+  S.voiced=S.db>S.noise+10;
+  if(S.voiced&&frame%2===0){const p=pitchOf(buf,ctx.sampleRate);if(p)S.pitch=S.pitch?ema(S.pitch,p,.15):p}
+
+  let fresh=false;
+  if(face&&video.readyState>=2&&video.currentTime!==lastVT){
+    lastVT=video.currentTime;
+    try{const r=face.detectForVideo(video,t);
+      if(r.faceBlendshapes&&r.faceBlendshapes.length){const o={};for(const c of r.faceBlendshapes[0].categories)o[c.categoryName]=c.score;S.bs=o;S.faceSeen=t;fresh=true}
+    }catch(e){}
+  }
+  if(fresh){const j=g('jawOpen');S.mouth=ema(S.mouth,Math.abs(j-S.prevJaw),.2);S.prevJaw=j}
+  const faceOk=!!face&&t-S.faceSeen<1000;
+  const mthr=S.base?S.base.mthr:.006;
+  S.self=S.voiced&&(S.mode==='calib'||!faceOk||S.mouth>mthr);
+
+  // syllable-ish peaks from the loudness envelope, only while you speak
+  const env=S.db;
+  if(!S.self){S.valley=env;S.rising=false}
+  else if(env>S.env+.05){S.rising=true}
+  else if(env<S.env-.05){
+    if(S.rising){if(S.env-S.valley>3&&t-S.lastPeak>100){S.peaks.push(t);S.lastPeak=t;if(S.mode==='calib')S.cal.peaks++}S.rising=false;S.valley=env}
+    else S.valley=Math.min(S.valley,env);
+  }
+  S.env=env;
+
+  S.hist.push([t,S.voiced,S.self,dt]);
+  while(S.hist.length&&t-S.hist[0][0]>60000)S.hist.shift();
+  while(S.peaks.length&&t-S.peaks[0]>5000)S.peaks.shift();
+
+  if(S.mode==='calib'){
+    const C=S.cal;
+    if(S.voiced){C.db.push(S.db);if(S.pitch)C.pitch.push(S.pitch);if(faceOk)C.mouth.push(S.mouth);C.selfSecs+=dt}
+    if(fresh){C.brow.push((g('browDownLeft')+g('browDownRight'))/2);C.frown.push((g('mouthFrownLeft')+g('mouthFrownRight'))/2);C.press.push((g('mouthPressLeft')+g('mouthPressRight'))/2);C.sneer.push((g('noseSneerLeft')+g('noseSneerRight'))/2)}
+  }else if(S.mode==='live'){evaluate(dt,t,faceOk)}
+  requestAnimationFrame(loop);
+}
+
+function evaluate(dt,t,faceOk){
+  const B=S.base,k=SENS[$('sens').value]||1,raw={};
+  if(faceOk){
+    const brow=(g('browDownLeft')+g('browDownRight'))/2,frown=(g('mouthFrownLeft')+g('mouthFrownRight'))/2;
+    const press=(g('mouthPressLeft')+g('mouthPressRight'))/2,sneer=(g('noseSneerLeft')+g('noseSneerRight'))/2;
+    const sl=g('mouthSmileLeft'),sr=g('mouthSmileRight');
+    raw.scowl=clamp(((brow-B.brow)*1.6+(frown-B.frown)*2)*k);
+    raw.tense=clamp((press-B.press)*1.8*k);
+    raw.sneer=clamp(((sneer-B.sneer)*2.5+Math.max(0,Math.abs(sl-sr)-.18)*2.5)*k);
+    raw.roll=clamp((Math.min(g('eyeLookUpLeft'),g('eyeLookUpRight'))-.45)*3*k);
+  }else raw.scowl=raw.tense=raw.sneer=raw.roll=0;
+  let selfRecent=0,voiceAll=0,self60=0;
+  for(const h of S.hist){if(h[1])voiceAll+=h[3];if(h[2]){self60+=h[3];if(t-h[0]<5000)selfRecent+=h[3]}}
+  S.voiceSecs=voiceAll;S.share=voiceAll>0?self60/voiceAll:0;
+  if(selfRecent>1.2)S.rate=S.peaks.length/selfRecent;
+  raw.loud=S.self?clamp((S.db-B.db-5)/10*k):0;
+  raw.pitch=S.self&&B.pitch&&S.pitch?clamp((S.pitch/B.pitch-1.15)/.3*k):0;
+  raw.fast=selfRecent>1.2&&B.rate?clamp((S.rate/B.rate-1.2)/.4*k):0;
+  raw.hog=voiceAll>20?clamp((S.share-.7)/.2):0;
+
+  let mx=0,sum=0,top=null;
+  for(const c in CUES){
+    const tau=c==='hog'?3:(S.self||c in{scowl:1,tense:1,sneer:1,roll:1})?.6:1.2;
+    S.bad[c]=ema(S.bad[c],raw[c],1-Math.exp(-dt/tau));
+    const v=S.bad[c]*CUES[c].w;sum+=v;if(v>mx){mx=v;top=c}
+    if(S.bad[c]>.5)S.hold[c]+=dt;else S.hold[c]=Math.max(0,S.hold[c]-dt*2);
+    if(S.hold[c]>1.2&&t>S.cool[c])fire(c,t);
+  }
+  const target=100*(1-clamp(mx*.7+sum*.15));
+  S.score=ema(S.score,target,1-Math.exp(-dt/1));
+  if(t-S.lastSample>500){S.scores.push(S.score);S.lastSample=t}
+  if(frame%4===0)render(t,faceOk);
+}
+
+function fire(c,t){
+  S.counts[c]++;S.cool[c]=t+9000;S.hold[c]=0;S.alertUntil=t+4000;
+  const a=$('alert');a.textContent=CUES[c].msg;a.classList.add('hot');
+  if($('vib').checked&&navigator.vibrate)navigator.vibrate([120,80,120]);
+  const d=$('dot');d.style.transform='scale(1.6)';setTimeout(()=>d.style.transform='',300);
+}
+
+const colorFor=s=>s>=75?'var(--calm)':s>=50?'var(--warn)':'var(--bad)';
+function bar(id,v){const e=$(id);e.style.width=(clamp(v)*100).toFixed(0)+'%';e.style.background=v>.66?'var(--bad)':v>.33?'var(--warn)':'var(--calm)'}
+function render(t,faceOk){
+  const sc=Math.round(S.score),col=colorFor(sc);
+  $('score').textContent=sc;$('slabel').textContent=sc>=75?'Steady':sc>=50?'Watch it':'Reset';
+  const arc=$('arc');arc.style.strokeDashoffset=(326.7*(1-sc/100)).toFixed(1);arc.style.stroke=col;
+  const d=$('dot');d.style.background=col;d.style.boxShadow='0 0 28px '+col;
+  const B=S.base,fb=Math.max(S.bad.scowl,S.bad.tense,S.bad.sneer,S.bad.roll);
+  bar('bFace',fb);$('vFace').textContent=!face?'off':faceOk?(fb>.5?'tense':'ok'):'no face';
+  bar('bLoud',S.bad.loud);$('vLoud').textContent=(S.self?Math.round(S.db-B.db):0)+' dB';
+  bar('bPitch',S.bad.pitch);$('vPitch').textContent=(S.self&&B.pitch&&S.pitch?Math.round((S.pitch/B.pitch-1)*100):0)+'%';
+  bar('bFast',S.bad.fast);$('vFast').textContent=(B.rate&&S.rate?(S.rate/B.rate).toFixed(1):'1.0')+'x';
+  bar('bHog',S.bad.hog);$('vHog').textContent=Math.round(S.share*100)+'%';
+  const a=$('alert');
+  if(t>S.alertUntil){
+    a.classList.remove('hot');
+    a.textContent=face&&!faceOk?'Can\'t see your face. Adjust the phone or the light.':sc>=75?'Looking steady.':'Ease off a little. Breathe out slowly.';
+  }
+}
+
+async function start(){
+  show('calib');$('cback').hidden=true;$('ccount').textContent='15';
+  $('cstat').textContent='Asking for camera and microphone...';
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:480},height:{ideal:640}},audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+  }catch(e){$('cstat').textContent='Camera or microphone was blocked. Allow both for this site in Chrome settings, then try again.';$('cback').hidden=false;return}
+  video.srcObject=stream;try{await video.play()}catch(e){}
+  $('cam').hidden=false;
+  ctx=new (window.AudioContext||window.webkitAudioContext)();try{await ctx.resume()}catch(e){}
+  const src=ctx.createMediaStreamSource(stream);analyser=ctx.createAnalyser();analyser.fftSize=2048;src.connect(analyser);buf=new Float32Array(analyser.fftSize);
+  $('cstat').textContent='Loading the face model. The first time takes a few seconds...';
+  const ok=await loadFace();
+  try{wake=await navigator.wakeLock?.request('screen')}catch(e){wake=null}
+  resetState();running=true;lastT=0;requestAnimationFrame(loop);
+  $('cstat').textContent=ok?'Listening and watching. Start reading.':'Face model could not load, so this session is voice only. Start reading.';
+  $('liveNote').textContent=ok?'Bars fill as a cue drifts from your baseline.':'Voice only this session: the face model did not load.';
+  for(let i=15;i>0;i--){if(!running)return;$('ccount').textContent=i;await sleep(1000)}
+  finishCal();
+}
+
+function finishCal(){
+  const C=S.cal,heard=C.db.length>45;
+  S.base={db:heard?med(C.db):S.noise+18,pitch:heard?med(C.pitch):0,rate:C.selfSecs>2?Math.max(2,C.peaks/C.selfSecs):0,
+    mthr:C.mouth.length>20?Math.max(.003,med(C.mouth)*.45):.006,
+    brow:med(C.brow),frown:med(C.frown),press:med(C.press),sneer:med(C.sneer)};
+  if(!heard)$('liveNote').textContent='I did not hear much during calibration, so voice cues are rough this session.';
+  S.mode='live';S.t0=performance.now();S.score=100;show('live');
+}
+
+function end(){
+  if(!running&&!stream)return show('intro');
+  running=false;
+  stream?.getTracks().forEach(x=>x.stop());stream=null;
+  try{ctx?.close()}catch(e){}
+  try{wake?.release()}catch(e){}
+  $('cam').hidden=true;$('discreet').classList.remove('on');
+  if(S.mode!=='live'){show('intro');return}
+  const mins=(performance.now()-S.t0)/60000,avg=S.scores.length?Math.round(S.scores.reduce((a,b)=>a+b,0)/S.scores.length):100;
+  const total=Object.values(S.counts).reduce((a,b)=>a+b,0);
+  $('sumLine').textContent=`Average score ${avg} over ${mins<1?Math.max(1,Math.round(mins*60))+' seconds':mins.toFixed(1)+' minutes'}, with ${total} warning${total===1?'':'s'}.`;
+  const rows=Object.keys(CUES).filter(c=>S.counts[c]).sort((a,b)=>S.counts[b]-S.counts[a]);
+  $('sumTable').innerHTML=rows.length?rows.map(c=>`<tr><td>${CUES[c].label}</td><td>${S.counts[c]}</td></tr>`).join(''):'<tr><td>None. Nicely done.</td><td></td></tr>';
+  try{
+    const h=JSON.parse(localStorage.getItem('steady.history')||'[]');
+    h.unshift({d:new Date().toLocaleDateString(),m:+mins.toFixed(1),a:avg,top:rows[0]?CUES[rows[0]].label:'None'});
+    localStorage.setItem('steady.history',JSON.stringify(h.slice(0,10)));
+  }catch(e){}
+  S.mode='done';show('summary');
+}
+
+function renderHist(){
+  try{
+    const h=JSON.parse(localStorage.getItem('steady.history')||'[]');
+    if(!h.length)return;
+    $('histCard').hidden=false;
+    $('hist').innerHTML=h.map(x=>`<tr><td>${x.d}, ${x.m} min. Top cue: ${x.top}</td><td>${x.a}</td></tr>`).join('');
+  }catch(e){}
+}
+
+$('go').onclick=start;
+$('stop').onclick=end;
+$('cback').onclick=()=>{end();show('intro')};
+$('again').onclick=()=>{renderHist();show('intro')};
+$('disc').onclick=()=>{$('discreet').classList.add('on');document.documentElement.requestFullscreen?.().catch(()=>{})};
+$('discreet').onclick=()=>{$('discreet').classList.remove('on');if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})};
+document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible'&&running){try{wake=await navigator.wakeLock?.request('screen')}catch(e){}}});
+renderHist();
+}
+</script>
+</body></html>
