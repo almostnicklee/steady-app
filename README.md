@@ -10,19 +10,17 @@ The site is hosted free on GitHub Pages and updates automatically a minute or tw
 
 ## What it does
 
-- **Setup (15 seconds):** a large camera view with a head-shaped outline. The outline turns green when your face is well framed, and the countdown starts on its own.
-- **Personal setup (one time, about two minutes):** guided steps on camera and microphone (resting face straight on, turned left, turned right, tipped down, listening, normal read, lively story, rushed read, smile, frown, pressed lips). You tap Start and Done for each step. Steady saves your resting face as your neutral and sets each nudge from your own range, so a resting face with pressed lips, or a naturally smiley one, is not flagged. After setup, sessions start with a quick 6 second check.
-- **Head angle:** face cues are compared with your resting face at the current angle, using the angles from setup. If the camera moves to a new angle and stays there, Steady re-learns your resting face after about 4 seconds.
-- **Sharp words (optional, on by default):** catches phrases that can sound hostile, blaming, defensive or dismissive (for example "whatever" or "not my fault") and suggests a better phrasing. Only your own speech is checked, while your mouth is moving; it needs the camera.
-- **During the meeting:** a friendly face mirrors the strongest cue with a plain label (for example "Scowling: may read as frustrated"), the background shifts from navy through plum to red, and a short nudge appears (with a vibration on phones that support it).
-- **Cues:** scowl, tight lips, smirk, eye roll, raised voice, rising pitch, rushing, and holding the floor too long. Every cue is measured against your own normal from setup.
-- **Nudge options:** vibration and an optional chime, plus a **Test nudge** button during a session to check both.
-  - Android phones vibrate, except while the phone is on silent or Do Not Disturb (Android skips website vibration then). The chime plays at media volume. Laptops cannot vibrate.
-  - iPhone does not let websites vibrate. Steady tries a light tap through a Safari switch-control trick, which may not work on every iOS version.
-  - On iPhone, while the microphone is on, iOS plays web sounds quietly through the earpiece, so use headphones to hear the chime.
-- **Recent sessions** can be deleted one at a time, or all at once.
-- **Remember my normal (optional):** Steady can keep a small profile on your device so it learns your usual baselines and normal range across sessions. It is a few dozen numbers (resting brow reading, usual pitch and pace, typical range per cue), with no audio, video or images. It is encrypted with your sign-in, never leaves the device, and turning the switch off deletes it.
-- **Privacy:** nothing is recorded or uploaded. Session scores, settings, and the optional profile are stored only in the browser on your device.
+Steady's goal is to help people who have trouble with emotional regulation at work notice a reaction early, interrupt it, and build their own ability to self-correct, so they need the app less over time.
+
+- **Personal setup (one time, about two minutes):** guided steps on camera and microphone (resting face straight on, turned left, turned right, tipped down, listening, normal read, lively story, rushed read, smile, frown, pressed lips). You tap Start and Done for each step.
+- **During the meeting (private by default):** the screen stays dark. When something slips you get a vibration and a short action tip, such as "Brow tight. Long exhale." or "Louder than your usual. Exhale before the next sentence." Your saved plan is added to the tip. A label describes the behavior ("Brow lowered: can read as disagreement"), never your emotion.
+- **I caught it:** tap it (or press C, or tap the dot in discreet mode) when you notice first. Self-catches are the main measure of progress.
+- **That nudge was wrong:** marks a false alarm. Steady becomes a little less sensitive to that cue, or ignores that phrase.
+- **Pacing:** at least 20 seconds between nudges and at most 10 per meeting; other moments are noted quietly for the review. **Nudges: Auto** starts with every moment and switches to big moments only once you catch at least half yourself over three sessions, with a full check-up every fourth session. **Off** gives a review only.
+- **After the meeting:** rate the meeting before seeing any data, then see what stood out and how fast you came back. An optional two-minute review asks what set it off, what you noticed first in your body, and a word for what you felt, and ends with an if-then plan ("If someone questions my numbers, I will take one long exhale"). The plan is shown before your next meeting and added to nudges. A short check-in links to support if you are not okay.
+- **Sharp words (on by default, needs the camera):** catches blaming, hostile, dismissive and defensive phrases and suggests a better phrasing. Self-critical phrases ("I'm so stupid") get a kind note instead. Repair phrases ("help me understand") are credited in the summary.
+- **Options:** Meeting view Full color (the screen warms to red and a face mirrors the cue), Gentle mode, separate Face cues and Voice cues switches, sensitivity, vibration, chime.
+- **Privacy:** nothing is recorded or uploaded. Settings, session counts, the optional profile and your plan are stored only in this browser; the profile and plan are encrypted with your sign-in. Review answers are not saved.
 
 ## How detection works
 
