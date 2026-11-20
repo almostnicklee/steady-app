@@ -404,7 +404,7 @@ const CUES={
   fast:{w:.7,tau:1,hold:1.5,say:['Faster than your usual. Slow down and pause.','Speeding up. Finish the sentence, then take a breath.'],label:'Faster than usual',short:'Rushing',fill:'#b4e4c8',ex:'Faster than usual',rd:'Can be hard to follow'},
   hog:{w:.5,tau:2,hold:0,cool:60,say:['You have held the floor for a while. Ask a question.','Long turn. Check in: "What do you think?"'],label:'Long stretch of talking',short:'Long turn',fill:'#a9d9f5',ex:'Long turn',rd:'Others may want a say'},
   gesture:{w:1,tau:.2,hold:.5,cool:8,say:['Hand to your face. Lower it and take a long exhale.','Hand at your forehead. Rest your hands and breathe out slowly.'],label:'Hand to face',short:'Hand to face',fill:'#f6c58f',ex:'Hand to forehead',rd:'Can read as impatient'},
-  sigh:{w:.8,tau:.1,hold:0,cool:8,say:['Audible sigh. Breathe out quietly instead.','Sigh. Pause, then say what you need.'],label:'Audible sigh',short:'Sigh',fill:'#c9d3f5',ex:'Audible sigh',rd:'Can read as impatient'},
+  sigh:{w:.8,tau:.1,hold:0,cool:20,say:['Audible sigh. Breathe out quietly instead.','Sigh. Pause, then say what you need.'],label:'Audible sigh',short:'Sigh',fill:'#c9d3f5',ex:'Audible sigh',rd:'Can read as impatient'},
   shake:{w:.8,tau:.1,hold:0,cool:15,say:['Head shaking. Keep still and let them finish.','Head shake. Nod to show you are listening, then share your view.'],label:'Head shake',short:'Head shake',fill:'#b9e0f0',ex:'Head shake',rd:'Can read as disagreement'},
   words:{w:1,tau:.15,hold:0,cool:5,say:['That may sound confrontational.'],label:'Sharp words',short:'Sharp words',fill:'#ffb3a7',ex:'Sharp words',rd:'Can come across as confrontational'}
 };
@@ -424,7 +424,7 @@ function resetState(){
     learn:{db:[],pitch:[],ptime:[],alpha:[],secs:0,peaks:0},learnF:{brow:[],frown:[],press:[],sneer:[],asym:[],smile:[],up:[],yaw:[],nod:[]},
     base:null,bad:{},hold:{},cool:{},counts:{},heat:0,score:100,scores:[],lastSample:0,t0:0,alertUntil:0,
     talk:new Float32Array(90),sec:-1,share:0,dL:0,st:0,top:null,topV:0,alignT:0,frameT0:0,calT0:0,hiddenAt:0,themeT:0,
-    fp:{...CALM},ff:[255,217,120],sig:'',T:{},prof:null,mute:0,mins:0,gA:null,gTalk:false,gMouth:{S:[],I:[]},v:null,bk:{good:0,warn:0,nudge:0},topTime:{},nudgeUntil:0,utt:[],uttLast:0,wordUntil:0,wordMsg:'',said:{},away:0,awayV:[],lastAway:0,repairs:0,selfMsg:'',selfAt:0,ignore:new Set(),lastWord:'',hitAt:{},chanAt:{},sinceP:0,sg:{on:false},sighAt:-1e9,yawH:[],shakeAt:-1e9,handKind:'',handT:0,handSince:0,eyesT:0,comboUntil:0,combo:'',
+    fp:{...CALM},ff:[255,217,120],sig:'',T:{},prof:null,mute:0,mins:0,gA:null,gTalk:false,gMouth:{S:[],I:[]},v:null,bk:{good:0,warn:0,nudge:0},topTime:{},nudgeUntil:0,utt:[],uttLast:0,wordUntil:0,wordMsg:'',said:{},away:0,awayV:[],lastAway:0,repairs:0,selfMsg:'',selfAt:0,ignore:new Set(),lastWord:'',hitAt:{},chanAt:{},sinceP:0,sg:{on:false},sighAt:-1e9,sighStrong:false,yawH:[],shakeAt:-1e9,handKind:'',handT:0,handSince:0,eyesT:0,comboUntil:0,combo:'',
     moments:[],shown:0,lastNudge:-1e9,miss:{},vari:0,rollT:0,rollPk:0,rollUntil:0,rollV:0,level:'all',
     ses:{brow:[],frown:[],press:[],sneer:[],asym:[],smile:[],f0:[],rate:[],x:{}}});
   for(const k in CUES){S.bad[k]=0;S.hold[k]=0;S.cool[k]=0;S.counts[k]=0;S.T[k]=.5;S.ses.x[k]=[]}
@@ -462,14 +462,17 @@ async function onAudio(x){
   const A=cal?S.cal:gd?S.gA:live&&S.base&&!S.base.voice?S.learn:null;
   let f0=0,al=null;
   if(speech){f0=yin(WIN);if(f0){al=tilt(WIN);S.lastF0=now}}
-  // audible sigh: a continuous, almost unvoiced, breathy burst of 0.4 to 2.5 s (typing is too gappy, speech is voiced)
+  // audible sigh: a loud, continuous, almost unvoiced, breathy burst of 0.6 to 2.5 s (typing is too gappy, speech is voiced).
+  // A strong one (24 dB over the room, 0.8 s or longer) can nudge on its own; a moderate one only adds to other signals.
   {const G=S.sg,e=db-S.noise;
    if(e>12&&now>=S.mute){
-     if(!G.on)Object.assign(G,{on:true,n:0,tot:0,voiced:0,hi:0,gap:0});
-     G.n++;G.tot++;G.gap=0;if(f0||yin(WIN))G.voiced++;if(tilt(WIN)>-10)G.hi++;
+     if(!G.on)Object.assign(G,{on:true,n:0,tot:0,voiced:0,hi:0,gap:0,peak:0});
+     G.n++;G.tot++;G.gap=0;G.peak=Math.max(G.peak,e);if(f0||yin(WIN))G.voiced++;if(tilt(WIN)>-10)G.hi++;
    }else if(G.on){
      G.tot++;
-     if(++G.gap>3){const d=G.n*.032;if(d>=.4&&d<=2.5&&G.voiced<=.12*G.n&&G.hi>=.75*G.n&&G.n>=.7*(G.tot-G.gap))S.sighAt=now;G.on=false}
+     if(++G.gap>3){const d=G.n*.032;
+       if(d>=.6&&d<=2.5&&G.peak>=18&&G.voiced<=.1*G.n&&G.hi>=.8*G.n&&G.n>=.7*(G.tot-G.gap)){S.sighAt=now;S.sighStrong=G.peak>=24&&d>=.8}
+       G.on=false}
    }}
   // count syllables: peaks in the smoothed low-frequency loudness, in 16 ms steps
   for(let h=0;h<2;h++){
@@ -530,7 +533,7 @@ function voiceDrive(t,x){
   S.share=el>5?clamp(tk/Math.min(90,el)):0; // share of the last 90 seconds you spent talking
   if(el>45)x.hog=(S.share-.55)/.3;
   if(t<S.wordUntil)x.words=1;
-  if(t-S.sighAt<1500)x.sigh=1;
+  if(t-S.sighAt<1500)x.sigh=S.sighStrong?1:.45; // a moderate sigh stays under the trigger unless another channel backs it up
 }
 // median pitch in semitones above your normal, ignoring octave slips of the pitch tracker
 function pitchSt(f,base){
