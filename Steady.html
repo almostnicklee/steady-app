@@ -183,7 +183,7 @@ button:disabled{opacity:.55;cursor:default}
   <ol class="steps">
     <li><b>Point a camera at your face.</b> Prop your phone beside your laptop, or open Steady in a browser window next to your video call.</li>
     <li><b>Line up with the outline.</b> A 15 second setup learns your normal face and voice.</li>
-    <li><b>Just meet.</b> Steady stays quiet and private. When something slips, you get a vibration and a short tip, like "Long exhale." Tap <b>I caught it</b> when you notice first.</li>
+    <li><b>Just meet.</b> The screen stays navy while you look and sound steady, and warms toward red when something slips, with a short tip like "Long exhale." Tap <b>I caught it</b> when you notice first.</li>
     <li><b>Review for two minutes.</b> See what stood out, name what set it off, and make a plan for next time. Steady steps back as you catch more yourself.</li>
   </ol>
 
@@ -201,20 +201,20 @@ button:disabled{opacity:.55;cursor:default}
     </div>
     <div class="set" role="radiogroup" aria-labelledby="levelL"><span id="levelL">Nudges</span>
       <div class="seg">
-        <label><input type="radio" name="level" value="auto" checked><span>Auto</span></label>
-        <label><input type="radio" name="level" value="all"><span>All</span></label>
+        <label><input type="radio" name="level" value="all" checked><span>All</span></label>
+        <label><input type="radio" name="level" value="auto"><span>Auto</span></label>
         <label><input type="radio" name="level" value="big"><span>Big</span></label>
         <label><input type="radio" name="level" value="off"><span>Off</span></label>
       </div>
     </div>
-    <p class="note" id="levelNote" style="margin:0 0 6px">Auto starts with every moment, then nudges only for big ones once you catch most moments yourself. Off gives no nudges during the meeting, only the review afterward.</p>
+    <p class="note" id="levelNote" style="margin:0 0 6px">All nudges every time a cue triggers. Auto does the same at first, then nudges only for big moments once you catch most moments yourself. Big nudges only for big moments. Off gives no nudges during the meeting, only the review afterward.</p>
     <div class="set" role="radiogroup" aria-labelledby="viewL"><span id="viewL">Meeting view</span>
       <div class="seg">
-        <label><input type="radio" name="view" value="private" checked><span>Private</span></label>
-        <label><input type="radio" name="view" value="full"><span>Full color</span></label>
+        <label><input type="radio" name="view" value="full" checked><span>Full color</span></label>
+        <label><input type="radio" name="view" value="private"><span>Private</span></label>
       </div>
     </div>
-    <p class="note" style="margin:0 0 6px">Private keeps the screen dark so others nearby cannot see a red alert. Full color warms the whole screen toward red and shows the face.</p>
+    <p class="note" style="margin:0 0 6px">Full color warms the whole screen toward red and shows the face. Private keeps the screen dark, for when others nearby can see your screen.</p>
     <label class="set">Vibrate on nudges <input type="checkbox" class="sw" id="vib" role="switch" checked aria-describedby="vibNote"></label>
     <p class="note" id="vibNote" style="margin:0 0 6px" hidden></p>
     <label class="set">Chime on nudges <input type="checkbox" class="sw" id="chime" role="switch" aria-describedby="chimeNote"></label>
@@ -684,7 +684,6 @@ const show=v=>{VIEWS.forEach(x=>$(x).classList.toggle('on',x===v));scrollTo(0,0)
 const SENS={low:.7,med:1,high:1.35};
 const sens=()=>SENS[document.querySelector('input[name=sens]:checked')?.value]||1;
 const radio=n=>document.querySelector(`input[name=${n}]:checked`)?.value;
-const GAP=20,CAP=10; // at least 20 s between nudges, at most 10 per meeting (the rest are noted for the review)
 const MP='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3';
 const FACE_MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 const ORT='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.1/dist/';
@@ -1073,9 +1072,8 @@ function evaluate(dt,t,faceOk){
 function fire(c,t){
   const big=S.bad[c]>=.85,m={c,t:Math.round((t-S.t0)/1000),shown:false,big,rec:null};
   S.moments.push(m);
-  // noted quietly for the review (not shown) when: nudges are off, only big moments count, too soon after the last one,
-  // the meeting's limit is reached, or you just caught yourself
-  if(S.level==='off'||(S.level==='big'&&!big)||t-S.lastNudge<GAP*1000||S.shown>=CAP||t<S.catchQuiet)return;
+  // every triggered cue nudges, unless you chose Big (big moments only) or Off (review only)
+  if(S.level==='off'||(S.level==='big'&&!big))return;
   m.shown=true;S.shown++;S.lastNudge=t;S.alertUntil=t+5000;
   const say=CUES[c].say;let msg=c==='words'&&S.wordMsg?S.wordMsg:say[S.vari++%say.length];
   if(plan&&plan.then&&c!=='hog')msg+=` Your plan: ${plan.then}.`;
@@ -1088,7 +1086,7 @@ function fire(c,t){
 function caught(){
   if(S.mode!=='live')return;
   const t=performance.now(),before=t-S.lastNudge>10000;
-  S.catches.push({t:Math.round((t-S.t0)/1000),before});S.catchQuiet=t+GAP*1000;
+  S.catches.push({t:Math.round((t-S.t0)/1000),before});
   $('catches').textContent=S.catches.length;
   const a=$('alert');a.classList.remove('hot');a.textContent=before?'Nice catch. Breathe out and carry on.':'Good. Breathe out and carry on.';S.alertUntil=t+4000;
   const d=$('dot');d.style.transform='scale(1.3)';setTimeout(()=>d.style.transform='',250);
@@ -1306,19 +1304,19 @@ resetState();
 // ---- small things kept in this browser: settings, sign-in, saved profile ----
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 let pkey=null,profile=null,asked=false,booted=false,lockT=0,mem={n:0,until:0};
-function saveSet(){store.set('steady.settings',{sens:radio('sens')||'med',level:radio('level')||'auto',view:radio('view')||'private',gentle:$('gentle').checked,faceCues:$('faceCues').checked,voiceCues:$('voiceCues').checked,vib:$('vib').checked,chime:$('chime').checked,words:$('words').checked,rem:$('rem').checked,asked})}
+function saveSet(){store.set('steady.settings',{sens:radio('sens')||'med',nudges:radio('level')||'all',meetView:radio('view')||'full',gentle:$('gentle').checked,faceCues:$('faceCues').checked,voiceCues:$('voiceCues').checked,vib:$('vib').checked,chime:$('chime').checked,words:$('words').checked,rem:$('rem').checked,asked})}
 function loadSet(){
   const q=store.get('steady.settings',{})||{};
   if(SENS[q.sens])document.querySelector(`input[name=sens][value=${q.sens}]`).checked=true;
   if('vib' in q)$('vib').checked=!!q.vib;
   $('chime').checked=!!q.chime;$('rem').checked=!!q.rem;asked=!!q.asked;if('words' in q)$('words').checked=!!q.words;
-  for(const n of ['level','view'])if(q[n]){const r=document.querySelector(`input[name=${n}][value=${q[n]}]`);if(r)r.checked=true}
+  for(const [n,k] of [['level','nudges'],['view','meetView']])if(q[k]){const r=document.querySelector(`input[name=${n}][value=${q[k]}]`);if(r)r.checked=true}
   $('gentle').checked=!!q.gentle;if('faceCues' in q)$('faceCues').checked=!!q.faceCues;if('voiceCues' in q)$('voiceCues').checked=!!q.voiceCues;
 }
 // Auto support: every moment at first; only big moments once you catch at least half yourself over three sessions,
 // with a full check-up every fourth session; back to every moment after a session with several nudges and no catches.
 function effLevel(){
-  const pick=radio('level')||'auto';S.levelNote='';
+  const pick=radio('level')||'all';S.levelNote='';
   if(pick!=='auto')return pick;
   const h=getHist().filter(x=>x.n!=null);
   if(h.length<3)return 'all';
